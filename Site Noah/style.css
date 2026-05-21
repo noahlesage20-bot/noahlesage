@@ -1,0 +1,962 @@
+/* ==========================================
+   1. Fonts
+========================================== */
+@font-face {
+  font-family: 'PPMori';
+  src: url('fonts/PPMori-Extralight.otf') format('opentype');
+  font-weight: 200;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'PPMori';
+  src: url('fonts/PPMori-ExtralightItalic.otf') format('opentype');
+  font-weight: 200;
+  font-style: italic;
+}
+@font-face {
+  font-family: 'PPMori';
+  src: url('fonts/PPMori-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'PPMori';
+  src: url('fonts/PPMori-RegularItalic.otf') format('opentype');
+  font-weight: 400;
+  font-style: italic;
+}
+@font-face {
+  font-family: 'PPMori';
+  src: url('fonts/PPMori-Semibold.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'PPMori';
+  src: url('fonts/PPMori-SemiboldItalic.otf') format('opentype');
+  font-weight: 600;
+  font-style: italic;
+}
+
+/* ==========================================
+   2. Variables & Reset
+========================================== */
+:root {
+  --yellow: #f6ff90;
+  --cream: #f4f2d7;
+  --black: #000000;
+  --white: #ffffff;
+  --font: 'PPMori', sans-serif;
+  --pad: 4vw;
+  --header-h: calc(28px + 5.5vw + 32px);
+}
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font);
+  background: var(--black);
+  overflow: hidden;
+}
+
+body {
+  overflow: hidden;
+  height: 100vh;
+  cursor: none;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ==========================================
+   3. Custom Cursor
+========================================== */
+#cursor-dot,
+#cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 10000;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+#cursor-dot {
+  width: 7px;
+  height: 7px;
+  background: white;
+  mix-blend-mode: difference;
+  transition: transform 0.15s ease;
+}
+
+#cursor-ring {
+  width: 36px;
+  height: 36px;
+  border: 1.5px solid white;
+  mix-blend-mode: difference;
+  transition: width 0.3s ease, height 0.3s ease, border-radius 0.3s ease;
+}
+
+body:has(a:hover) #cursor-dot,
+body:has(.proj-item:hover) #cursor-dot {
+  transform: translate(-50%, -50%) scale(0.5);
+}
+
+/* ==========================================
+   4. Loader
+========================================== */
+#loader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: flex-end;
+  padding: 28px var(--pad);
+  overflow: hidden;
+  transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Conteneur flex-colonne des bandes */
+#loader-bands {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#loader-band-top,
+#loader-band-mid,
+#loader-band-bot {
+  flex-basis: 0;
+  flex-shrink: 0;
+  width: 100%;
+  transition: background-color 0.55s ease,
+              flex-grow     0.5s  cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#loader-band-top { flex-grow: 38; background: var(--yellow); }
+#loader-band-mid { flex-grow: 24; background: var(--yellow); }
+#loader-band-bot { flex-grow: 38; background: var(--yellow); }
+
+#loader-percent {
+  position: relative;
+  z-index: 1;
+  font-size: clamp(72px, 15vw, 220px);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 0.82;
+  color: white;
+  mix-blend-mode: difference;
+  will-change: transform;
+}
+
+#loader.is-gone {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ==========================================
+   5. Transitions — Fade classique
+========================================== */
+
+.page-exiting {
+  opacity: 0;
+  transform: scale(1.015);
+  transition: opacity 0.35s ease, transform 0.35s ease !important;
+  pointer-events: none;
+}
+
+body.is-transitioning #cursor-ring {
+  opacity: 0.4;
+}
+
+/* ==========================================
+   6. Site Container
+========================================== */
+#site {
+  position: fixed;
+  inset: 0;
+  transition: opacity 0.6s ease;
+}
+
+#site.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ==========================================
+   7. Header
+========================================== */
+#header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 28px var(--pad);
+  mix-blend-mode: difference;
+  color: white;
+  pointer-events: none;
+}
+
+#header a {
+  pointer-events: auto;
+  color: white;
+}
+
+/* Header sur pages projet — fond blanc, texte lisible */
+#header.is-proj {
+  mix-blend-mode: normal;
+  color: var(--black);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 18px var(--pad);
+  transition: background 0.3s ease;
+}
+
+#header.is-proj a { color: var(--black); }
+
+.logo {
+  font-size: clamp(30px, 5.35vw, 77px);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  transition: opacity 0.3s ease;
+}
+
+.logo:hover {
+  opacity: 0.6;
+}
+
+#main-nav {
+  text-align: right;
+}
+
+#main-nav a {
+  display: block;
+  font-size: clamp(14px, 1.25vw, 18px);
+  font-weight: 400;
+  line-height: 1.05;
+  opacity: 0.35;
+  transition: opacity 0.3s ease;
+}
+
+#main-nav a.is-active,
+#main-nav a:hover {
+  opacity: 1;
+}
+
+/* ==========================================
+   8. Pages (common)
+========================================== */
+.page {
+  position: fixed;
+  inset: 0;
+  background: var(--white);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.01s;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+.page::-webkit-scrollbar { width: 0; }
+
+.page.is-active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.page--yellow {
+  background: var(--yellow);
+}
+
+/* ==========================================
+   9. Footer
+========================================== */
+.site-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 var(--pad);
+  height: 150px;
+  min-height: 150px;
+  background: var(--black);
+  color: var(--white);
+  font-size: clamp(11px, 0.97vw, 14px);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  flex-shrink: 0;
+}
+
+.site-footer a {
+  color: var(--white);
+  transition: opacity 0.3s ease;
+}
+
+.site-footer a:hover {
+  opacity: 0.5;
+}
+
+/* ==========================================
+   10. Home
+========================================== */
+.hero {
+  height: 100vh;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  padding: var(--pad);
+  padding-top: var(--header-h);
+}
+
+.hero-img-wrap {
+  position: relative;
+  width: 84%;
+  overflow: hidden;
+  align-self: flex-start;
+}
+
+.hero-img {
+  width: 100%;
+  height: auto;
+  max-height: calc(100vh - var(--header-h) - 2 * var(--pad));
+  object-fit: cover;
+  display: block;
+  transform-origin: center;
+  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.hero-img-wrap:hover .hero-img {
+  transform: scale(1.03);
+}
+
+.hero-float {
+  position: absolute;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: clamp(11px, 0.83vw, 13px);
+  font-weight: 400;
+  line-height: 1.1;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.hero-float--tl {
+  top: 6%;
+  left: 5%;
+}
+
+.hero-float--br {
+  bottom: 6%;
+  right: 5%;
+  text-align: right;
+}
+
+/* ==========================================
+   11. Work & Photo (Gallery)
+========================================== */
+.gallery {
+  height: 100vh;
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--pad);
+  padding-top: var(--header-h);
+}
+
+.gallery-img-wrap {
+  width: 84%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.gallery-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform-origin: center;
+  transition: opacity 0.5s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+
+.gallery-img.is-fading {
+  opacity: 0;
+  transform: scale(0.97);
+}
+
+.gallery-img-wrap:hover .gallery-img:not(.is-fading) {
+  transform: scale(1.025);
+}
+
+.proj-list {
+  position: absolute;
+  left: var(--pad);
+  bottom: 52px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.proj-item {
+  font-size: clamp(13px, 1.4vw, 20px);
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.18);
+  line-height: 1.3;
+  cursor: pointer;
+  transition: color 0.35s ease, font-size 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.proj-item.is-active {
+  font-size: clamp(28px, 2.5vw, 36px);
+  color: var(--black);
+}
+
+.proj-item:hover:not(.is-active) {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+/* ==========================================
+   11b. Work Roulette
+========================================== */
+.proj-roulette {
+  position: absolute;
+  left: var(--pad);
+  bottom: calc(var(--pad) - 50px);
+  height: 220px;
+  width: calc(16% - var(--pad));
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 28%,
+    black 72%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 28%,
+    black 72%,
+    transparent 100%
+  );
+}
+
+.proj-roulette-track {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.proj-roulette-item {
+  font-size: clamp(11px, 0.9vw, 14px);
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.15);
+  line-height: 1.05;
+  padding: 2px 0;
+  cursor: pointer;
+  user-select: none;
+  transition: font-size 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.5s ease,
+              color 0.5s ease;
+}
+
+.proj-roulette-item.is-active {
+  font-size: clamp(22px, 1.9vw, 28px);
+  color: var(--black);
+  opacity: 1;
+}
+
+/* ==========================================
+   12. Say Hello
+========================================== */
+.hello-top {
+  min-height: 100vh;
+  flex-shrink: 0;
+  padding: var(--pad);
+  padding-top: var(--header-h);
+  display: flex;
+  flex-direction: column;
+  background: var(--yellow);
+}
+
+.hello-title {
+  font-size: clamp(28px, 3.35vw, 48px);
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--black);
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  padding-top: 60px;
+}
+
+.hello-contacts {
+  display: flex;
+  gap: clamp(40px, 8vw, 120px);
+  padding-bottom: 80px;
+  padding-top: 60px;
+}
+
+.hello-col-label {
+  font-size: clamp(16px, 1.67vw, 24px);
+  font-weight: 400;
+  color: var(--black);
+  margin-bottom: 16px;
+}
+
+.hello-col a {
+  display: block;
+  font-size: clamp(12px, 1.1vw, 16px);
+  font-weight: 200;
+  color: var(--black);
+  line-height: 2.1;
+  transition: opacity 0.3s ease;
+}
+
+.hello-col a:hover {
+  opacity: 0.45;
+}
+
+.hello-img-wrap {
+  width: 100%;
+  height: 55vh;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.hello-img {
+  width: 100%;
+  height: 120%;
+  object-fit: cover;
+  display: block;
+  will-change: transform;
+  transform: translateY(0);
+}
+
+/* ==========================================
+   14. Scroll indicator (Home)
+========================================== */
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(6px); }
+}
+
+/* ==========================================
+   15. Reveal animations (JS via .anim-ready)
+========================================== */
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.anim-ready .hero-img-wrap,
+.anim-ready .gallery-img-wrap,
+.anim-ready .proj-hero {
+  animation: fadeIn 0.6s ease both;
+}
+
+.anim-ready .proj-roulette,
+.anim-ready .proj-list {
+  animation: fadeUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) both 0.15s;
+}
+
+.anim-ready .hello-title {
+  animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both 0.05s;
+}
+
+.anim-ready .hello-contacts {
+  animation: fadeUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) both 0.18s;
+}
+
+.anim-ready .proj-title-block {
+  animation: fadeUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) both 0.14s;
+}
+
+.anim-ready .proj-back {
+  animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both 0.04s;
+}
+
+/* ==========================================
+   16. Ringer Projet page
+========================================== */
+.proj-page {
+  flex: 1;
+  padding-top: var(--header-h);
+}
+
+.proj-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  font-family: var(--font);
+  font-size: clamp(14px, 1.1vw, 16px);
+  font-weight: 400;
+  color: var(--black);
+  cursor: pointer;
+  padding: var(--pad);
+  padding-top: 28px;
+  opacity: 0.45;
+  transition: opacity 0.3s ease;
+}
+
+.proj-back:hover {
+  opacity: 1;
+}
+
+.proj-hero {
+  width: 100%;
+  padding: 0 var(--pad);
+  overflow: hidden;
+}
+
+.proj-hero-img {
+  width: 100%;
+  height: auto;
+  max-height: 58vh;
+  object-fit: cover;
+  display: block;
+  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.proj-hero:hover .proj-hero-img {
+  transform: scale(1.02);
+}
+
+.proj-title-block {
+  padding: 60px var(--pad) 48px;
+}
+
+.proj-title {
+  font-size: clamp(40px, 5.35vw, 77px);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin-bottom: 16px;
+}
+
+.proj-meta {
+  font-size: clamp(13px, 1vw, 15px);
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.4);
+  letter-spacing: 0.02em;
+}
+
+.proj-wide {
+  width: 100%;
+  padding: 0 var(--pad);
+  overflow: hidden;
+  margin-bottom: 4vw;
+}
+
+.proj-wide-img {
+  width: 100%;
+  height: auto;
+  max-height: 65vh;
+  object-fit: cover;
+  display: block;
+  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.proj-wide:hover .proj-wide-img {
+  transform: scale(1.02);
+}
+
+.proj-duo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--pad);
+  padding: 0 var(--pad);
+  margin-bottom: 6vw;
+}
+
+.proj-duo-img-wrap {
+  overflow: hidden;
+}
+
+.proj-duo-img {
+  width: 100%;
+  height: auto;
+  max-height: 50vh;
+  object-fit: cover;
+  display: block;
+  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.proj-duo-img-wrap:hover .proj-duo-img {
+  transform: scale(1.03);
+}
+
+/* ==========================================
+   17. Matière Créative — page éditoriale
+========================================== */
+
+/* Topbar : back + lang toggle */
+.mc-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: calc(var(--header-h) + 10px) var(--pad) 8px;
+}
+
+.mc-lang {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.mc-lang-sep {
+  font-size: 11px;
+  opacity: 0.25;
+}
+
+.mc-lang-btn {
+  background: none;
+  border: none;
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: var(--black);
+  opacity: 0.28;
+  padding: 0;
+  transition: opacity 0.25s ease;
+}
+
+.mc-lang-btn.is-active { opacity: 1; }
+.mc-lang-btn:hover     { opacity: 0.65; }
+
+/* Versions FR / EN */
+.mc-v[data-version] { display: none; }
+.mc-v.is-shown      { display: block; }
+blockquote.mc-v.is-shown { display: block; }
+div.mc-v.is-shown   { display: block; }
+
+/* Hero */
+.mc-hero {
+  width: 100%;
+  overflow: hidden;
+}
+
+.mc-hero-img {
+  width: 100%;
+  height: 72vh;
+  object-fit: cover;
+  display: block;
+  transition: transform 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mc-hero:hover .mc-hero-img { transform: scale(1.025); }
+
+/* Citation */
+.mc-quote {
+  padding: 5vw var(--pad) 4vw;
+  max-width: 900px;
+}
+
+.mc-quote p {
+  font-size: clamp(19px, 1.9vw, 28px);
+  font-weight: 200;
+  font-style: italic;
+  line-height: 1.2;
+  color: var(--black);
+  margin-bottom: 20px;
+}
+
+.mc-quote cite {
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.35);
+}
+
+/* En-tête titre */
+.mc-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4vw;
+  padding: 0 var(--pad) 5vw;
+  align-items: start;
+}
+
+.mc-title {
+  font-size: clamp(36px, 4.5vw, 66px);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 20px;
+}
+
+.mc-tagline {
+  font-size: clamp(15px, 1.35vw, 20px);
+  font-weight: 400;
+  line-height: 1.45;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.mc-header-right {
+  padding-top: 12px;
+  font-size: clamp(11px, 0.85vw, 13px);
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.4);
+  line-height: 1.7;
+}
+
+/* Corps de texte — colonne droite (editorial offset) */
+.mc-body {
+  padding: 0 var(--pad) 5vw calc(40% + var(--pad));
+}
+
+.mc-prose p {
+  font-size: clamp(14px, 1.1vw, 16px);
+  font-weight: 400;
+  line-height: 1.85;
+  color: rgba(0, 0, 0, 0.7);
+  margin-bottom: 1.5em;
+}
+
+/* Grille 2 images */
+.mc-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--pad);
+  padding: 0 var(--pad) 5vw;
+}
+
+.mc-grid-img { overflow: hidden; }
+
+.mc-grid-img img {
+  width: 100%;
+  height: 52vh;
+  object-fit: cover;
+  display: block;
+  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mc-grid-img--offset { margin-top: 4vw; }
+.mc-grid-img:hover img { transform: scale(1.04); }
+
+/* Image plein cadre */
+.mc-full {
+  overflow: hidden;
+  margin-bottom: 5vw;
+}
+
+.mc-full-img {
+  width: 100%;
+  height: 78vh;
+  object-fit: cover;
+  display: block;
+  transition: transform 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mc-full:hover .mc-full-img { transform: scale(1.02); }
+
+/* Vidéo */
+.mc-video-wrap {
+  overflow: hidden;
+  margin-bottom: 5vw;
+}
+
+.mc-video {
+  width: 100%;
+  height: 66vh;
+  object-fit: cover;
+  display: block;
+}
+
+/* Fiche projet */
+.mc-fiche {
+  margin: 0 var(--pad);
+  padding: 4vw 0 6vw;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.mc-fiche-row {
+  display: flex;
+  gap: clamp(24px, 4vw, 64px);
+  flex-wrap: wrap;
+}
+
+.mc-fiche-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mc-fiche-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.32);
+}
+
+.mc-fiche-value {
+  font-size: clamp(13px, 1vw, 15px);
+  font-weight: 400;
+  color: var(--black);
+  line-height: 1.4;
+}
+
+/* Reveal au scroll */
+.reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ==========================================
+   18. Selection
+========================================== */
+::selection {
+  background: var(--yellow);
+  color: var(--black);
+}
