@@ -1,9 +1,0 @@
-User-agent: *
-Allow: /
-
-# Sitemap
-Sitemap: https://ringerstudio.com/sitemap.xml
-
-# Bloquer les ressources non publiques
-Disallow: /fonts/
-Disallow: /*.otf$
