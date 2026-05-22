@@ -3,37 +3,37 @@
 ========================================== */
 @font-face {
   font-family: 'PPMori';
-  src: url('fonts/PPMori-Extralight.otf') format('opentype');
+  src: url('PPMori-Extralight.otf') format('opentype');
   font-weight: 200;
   font-style: normal;
 }
 @font-face {
   font-family: 'PPMori';
-  src: url('fonts/PPMori-ExtralightItalic.otf') format('opentype');
+  src: url('PPMori-ExtralightItalic.otf') format('opentype');
   font-weight: 200;
   font-style: italic;
 }
 @font-face {
   font-family: 'PPMori';
-  src: url('fonts/PPMori-Regular.otf') format('opentype');
+  src: url('PPMori-Regular.otf') format('opentype');
   font-weight: 400;
   font-style: normal;
 }
 @font-face {
   font-family: 'PPMori';
-  src: url('fonts/PPMori-RegularItalic.otf') format('opentype');
+  src: url('PPMori-RegularItalic.otf') format('opentype');
   font-weight: 400;
   font-style: italic;
 }
 @font-face {
   font-family: 'PPMori';
-  src: url('fonts/PPMori-Semibold.otf') format('opentype');
+  src: url('PPMori-Semibold.otf') format('opentype');
   font-weight: 600;
   font-style: normal;
 }
 @font-face {
   font-family: 'PPMori';
-  src: url('fonts/PPMori-SemiboldItalic.otf') format('opentype');
+  src: url('PPMori-SemiboldItalic.otf') format('opentype');
   font-weight: 600;
   font-style: italic;
 }
