@@ -11,10 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const navLinks      = document.querySelectorAll('.js-nav');
   const pages         = document.querySelectorAll('.page');
   const cursorDot     = document.getElementById('cursor-dot');
-  const cursorRing    = document.getElementById('cursor-ring');
 
   // ── Custom Cursor ─────────────────────────────────────────────────────────
-  let mX = 0, mY = 0, rX = 0, rY = 0;
+  let mX = 0, mY = 0;
   let cursorVisible = false;
 
   document.addEventListener('mousemove', e => {
@@ -24,31 +23,13 @@ document.addEventListener('DOMContentLoaded', () => {
     cursorDot.style.top  = mY + 'px';
     if (!cursorVisible) {
       cursorDot.style.opacity  = '1';
-      cursorRing.style.opacity = '1';
       cursorVisible = true;
     }
   });
 
   document.addEventListener('mouseleave', () => {
     cursorDot.style.opacity  = '0';
-    cursorRing.style.opacity = '0';
     cursorVisible = false;
-  });
-
-  (function tickCursor() {
-    rX += (mX - rX) * 0.1;
-    rY += (mY - rY) * 0.1;
-    cursorRing.style.left = rX + 'px';
-    cursorRing.style.top  = rY + 'px';
-    requestAnimationFrame(tickCursor);
-  })();
-
-  function enlargeCursor() { cursorRing.style.width = '56px'; cursorRing.style.height = '56px'; }
-  function restoreCursor() { cursorRing.style.width = '36px'; cursorRing.style.height = '36px'; }
-
-  document.querySelectorAll('a, button, .proj-item').forEach(el => {
-    el.addEventListener('mouseenter', enlargeCursor);
-    el.addEventListener('mouseleave', restoreCursor);
   });
 
   // ── Loader ────────────────────────────────────────────────────────────────
@@ -169,13 +150,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   updateNavActive('home');
 
+  const globalFooter = document.getElementById('global-footer');
+
   function showPage(target) {
-    pages.forEach(p => p.classList.remove('is-active', 'anim-ready', 'page-exiting'));
+    pages.forEach(p => {
+      p.classList.remove('is-active', 'anim-ready', 'page-exiting');
+      p.style.clipPath = '';
+    });
+    if (globalFooter) globalFooter.classList.remove('is-visible');
     const next = document.getElementById('page-' + target);
     if (!next) return null;
     next.scrollTop = 0;
     next.classList.add('is-active');
     if (siteHeader) siteHeader.classList.toggle('is-proj', projPages.has(target));
+    if (siteHeader) siteHeader.classList.toggle('is-hello', target === 'hello');
     if (target === 'matiere') setTimeout(checkMCReveal, 80);
     return next;
   }
@@ -283,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    // Image cliquable → navigue vers le projet actif
+    // Image : scroll → change de projet, clic → navigue
     const imgWrap = img.closest('.gallery-img-wrap');
     if (imgWrap) {
       imgWrap.style.cursor = 'pointer';
@@ -291,6 +279,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const page = items[activeIdx] && items[activeIdx].dataset.page;
         if (page && !transitioning) navigateTo(page);
       });
+      imgWrap.addEventListener('wheel', e => {
+        e.preventDefault();
+        const now = Date.now();
+        if (now - lastWheel < 380) return;
+        lastWheel = now;
+        setActive(activeIdx + (e.deltaY > 0 ? 1 : -1));
+      }, { passive: false });
     }
 
     // Initial state
@@ -338,8 +333,10 @@ document.addEventListener('DOMContentLoaded', () => {
     applyLang('fr');
   })();
 
-  // ── Matière Créative — scroll reveal ────────────────────────────────────
-  const mcPage = document.getElementById('page-matiere');
+  // ── Matière Créative — scroll reveal + barre de progression ─────────────
+  const mcPage         = document.getElementById('page-matiere');
+  const mcProgressFill = document.getElementById('mc-progress-fill');
+
   function checkMCReveal() {
     if (!mcPage) return;
     mcPage.querySelectorAll('.reveal:not(.is-visible)').forEach(el => {
@@ -347,7 +344,17 @@ document.addEventListener('DOMContentLoaded', () => {
       if (r.top < window.innerHeight + 50) el.classList.add('is-visible');
     });
   }
-  if (mcPage) mcPage.addEventListener('scroll', checkMCReveal, { passive: true });
+
+  if (mcPage) {
+    mcPage.addEventListener('scroll', () => {
+      checkMCReveal();
+      if (mcProgressFill) {
+        const max = mcPage.scrollHeight - mcPage.clientHeight;
+        const pct = max > 0 ? (mcPage.scrollTop / max) * 100 : 0;
+        mcProgressFill.style.height = pct + '%';
+      }
+    }, { passive: true });
+  }
 
   // ── Home — mouse parallax ─────────────────────────────────────────────────
   const homeSection = document.getElementById('page-home');
@@ -377,5 +384,62 @@ document.addEventListener('DOMContentLoaded', () => {
       helloImg.style.transform = `translateY(${offset}px)`;
     }, { passive: true });
   }
+
+  // ── Photo — image flottante au hover ─────────────────────────────────────
+  const photoHoverWrap = document.getElementById('photo-hover-wrap');
+  const photoHoverImg  = document.getElementById('photo-hover-img');
+
+  document.querySelectorAll('.photo-list-item').forEach(item => {
+    item.addEventListener('mouseenter', () => {
+      if (!photoHoverWrap || !photoHoverImg) return;
+      const src = item.dataset.img;
+      if (photoHoverImg.getAttribute('src') !== src) photoHoverImg.src = src;
+      photoHoverWrap.classList.add('is-visible');
+      document.querySelectorAll('.photo-list-item').forEach(i =>
+        i.classList.toggle('is-hovered', i === item)
+      );
+    });
+    item.addEventListener('mouseleave', () => {
+      if (photoHoverWrap) photoHoverWrap.classList.remove('is-visible');
+      document.querySelectorAll('.photo-list-item').forEach(i => i.classList.remove('is-hovered'));
+    });
+  });
+
+  // ── Footer global — clip-path reveal + arrondi ───────────────────────────
+  const GF_H = 320; // doit correspondre au padding-bottom de .page
+
+  // Supprimer les anciens site-footer (remplacés par le footer global)
+  pages.forEach(page => {
+    const old = page.querySelector('.site-footer');
+    if (old) old.remove();
+  });
+
+  // Navigation depuis le footer (délégation d'événement)
+  document.addEventListener('click', e => {
+    const link = e.target.closest('.gf-link[data-target]');
+    if (!link || transitioning) return;
+    e.preventDefault();
+    const target = link.dataset.target;
+    if (target === current) return;
+    navigateTo(target);
+  });
+
+  // Scroll : clip-path ouvre la page par le bas + révèle le footer derrière
+  pages.forEach(page => {
+    page.addEventListener('scroll', () => {
+      const dist = page.scrollHeight - page.scrollTop - page.clientHeight;
+      const progress = Math.max(0, Math.min(1, 1 - dist / GF_H));
+      if (progress > 0) {
+        const revealed = Math.round(progress * GF_H);
+        const radius   = Math.round(progress * 52);
+        page.style.clipPath =
+          `inset(0 0 ${revealed}px 0 round 0 0 ${radius}px ${radius}px)`;
+        if (globalFooter) globalFooter.classList.toggle('is-visible', progress > 0.35);
+      } else {
+        page.style.clipPath = '';
+        if (globalFooter) globalFooter.classList.remove('is-visible');
+      }
+    }, { passive: true });
+  });
 
 });

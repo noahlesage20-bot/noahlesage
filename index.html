@@ -14,7 +14,6 @@
 
 <!-- Custom cursor -->
 <div id="cursor-dot"></div>
-<div id="cursor-ring"></div>
 
 <!-- Loader -->
 <div id="loader">
@@ -38,6 +37,49 @@
       <a href="#" class="js-nav" data-target="hello" aria-label="Say hello — Contact">say hello</a>
     </nav>
   </header>
+
+  <!-- Footer global — derrière les pages, révélé au scroll -->
+  <footer id="global-footer" class="gf">
+    <div class="gf-inner">
+      <div class="gf-top">
+        <p class="gf-brand">Ringer Studio.</p>
+        <div class="gf-cols">
+          <div class="gf-col">
+            <p class="gf-col-head">Work</p>
+            <a href="#" class="gf-link" data-target="matiere">Matière Créative</a>
+            <a href="#" class="gf-link" data-target="stoxl">From S to XL</a>
+            <a href="#" class="gf-link" data-target="tapage">Tapage</a>
+            <a href="#" class="gf-link" data-target="palais">Palais Bulles</a>
+            <a href="#" class="gf-link" data-target="calsmith">Cal Smith</a>
+            <a href="#" class="gf-link" data-target="refonte">Refonte JOP</a>
+            <a href="#" class="gf-link" data-target="ringer">Ringer Projet</a>
+            <a href="#" class="gf-link" data-target="poster">Poster</a>
+          </div>
+          <div class="gf-col">
+            <p class="gf-col-head">Photo</p>
+            <a href="#" class="gf-link" data-target="photo">Voyage</a>
+            <a href="#" class="gf-link" data-target="photo">Street photo</a>
+            <a href="#" class="gf-link" data-target="photo">Portrait</a>
+          </div>
+          <div class="gf-col">
+            <p class="gf-col-head">Contact</p>
+            <a href="mailto:noah.lesage.pro@gmail.com" class="gf-link">noah.lesage.pro@gmail.com</a>
+          </div>
+        </div>
+        <div class="gf-socials">
+          <a href="https://www.instagram.com/ringer_studio/" target="_blank" rel="noopener noreferrer" class="gf-ig">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+            <span>Design</span>
+          </a>
+          <a href="https://www.instagram.com/ringer_photo/" target="_blank" rel="noopener noreferrer" class="gf-ig">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+            <span>Photos</span>
+          </a>
+        </div>
+      </div>
+      <div class="gf-bottom"><span>©Ringer_Studio | Noah Lesage | 2026</span></div>
+    </div>
+  </footer>
 
   <!-- ===================== HOME ===================== -->
   <section id="page-home" class="page page--scroll">
@@ -81,64 +123,65 @@
 
   <!-- ===================== PHOTO ===================== -->
   <section id="page-photo" class="page page--scroll">
-    <div class="gallery" id="photo-gallery">
-      <div class="gallery-img-wrap">
-        <img src="photo-street.jpg" alt="Street photo" class="gallery-img" id="photo-img">
+    <div class="photo-list">
+      <div class="photo-list-item" data-img="photo-street.jpg">
+        <span class="photo-list-name">Voyage</span>
       </div>
-      <div class="proj-roulette" id="photo-roulette">
-        <div class="proj-roulette-track" id="photo-track">
-          <div class="proj-roulette-item" data-img="photo-street.jpg">Voyage</div>
-          <div class="proj-roulette-item" data-img="photo-street.jpg">Street photo</div>
-          <div class="proj-roulette-item" data-img="photo-street.jpg">Portrait</div>
-        </div>
+      <div class="photo-list-item" data-img="photo-street.jpg">
+        <span class="photo-list-name">Street photo</span>
+      </div>
+      <div class="photo-list-item" data-img="photo-street.jpg">
+        <span class="photo-list-name">Portrait</span>
       </div>
     </div>
-    <footer class="site-footer">
-      <span>©Ringer_Studio | Noah Lesage | 2026</span>
-      <a href="mailto:noah.lesage.pro@gmail.com">noah.lesage.pro@gmail.com</a>
-    </footer>
   </section>
 
   <!-- ===================== PROJET : MATIÈRE CRÉATIVE ===================== -->
   <section id="page-matiere" class="page page--scroll">
 
-    <!-- Barre top : back + toggle langue -->
-    <div class="mc-topbar">
-      <button class="proj-back js-back"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>work</button>
-      <div class="mc-lang" id="mc-lang">
-        <button class="mc-lang-btn is-active" data-lang="fr">FR</button>
-        <span class="mc-lang-sep">/</span>
-        <button class="mc-lang-btn" data-lang="en">EN</button>
+    <!-- Layout principal : gauche sticky + droite galerie images -->
+    <div class="mc-proj-layout">
+
+      <!-- Panneau gauche — sticky -->
+      <div class="mc-proj-left">
+        <div class="mc-split-top">
+          <button class="proj-back js-back"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>work</button>
+          <div class="mc-lang" id="mc-lang">
+            <button class="mc-lang-btn is-active" data-lang="fr">FR</button>
+            <span class="mc-lang-sep">/</span>
+            <button class="mc-lang-btn" data-lang="en">EN</button>
+          </div>
+        </div>
+        <div class="mc-split-mid">
+          <h2 class="mc-split-title">Matière<br>Créative</h2>
+          <div class="mc-split-tagline">
+            <p class="mc-v" data-version="fr">Et si la contrainte était le vrai point de départ<br>de la création&nbsp;?</p>
+            <p class="mc-v" data-version="en">What if constraint was the real starting point<br>of creation?</p>
+          </div>
+        </div>
+        <div class="mc-progress">
+          <div class="mc-progress-fill" id="mc-progress-fill"></div>
+        </div>
+      </div>
+
+      <!-- Colonne droite — toutes les images empilées -->
+      <div class="mc-proj-right">
+        <div class="mc-proj-img"><img src="mc-photo.jpg" alt="Matière Créative"></div>
+        <div class="mc-proj-img"><img src="mc-dscf1.jpg" alt=""></div>
+        <div class="mc-proj-img"><img src="mc-dscf2.jpg" alt=""></div>
+        <div class="mc-proj-img"><img src="mc-dscf3.jpg" alt=""></div>
+        <div class="mc-proj-img"><img src="mc-dscf4.jpg" alt=""></div>
+        <div class="mc-proj-img"><img src="mc-poster.jpg" alt="Matière Créative — Poster"></div>
       </div>
     </div>
 
-    <!-- Hero plein cadre -->
-    <div class="mc-hero reveal">
-      <img src="mc-photo.jpg" alt="Matière Créative" class="mc-hero-img">
-    </div>
-
-    <!-- Citation -->
-    <div class="mc-quote reveal">
-      <blockquote class="mc-v" data-version="fr">
-        <p>« Les limites sont souvent des avantages déguisés. Elles nous donnent une structure dans laquelle travailler et nous obligent à être plus inventifs. »</p>
-        <cite>Rick Rubin</cite>
-      </blockquote>
-      <blockquote class="mc-v" data-version="en">
-        <p>"Limitations are often advantages in disguise. They give us a structure to work within and force us to be more inventive."</p>
-        <cite>Rick Rubin</cite>
-      </blockquote>
-    </div>
-
-    <!-- Grille unifiée : titre gauche / texte + meta droite -->
-    <div class="mc-content-grid reveal">
-      <div class="mc-content-left">
-        <h2 class="mc-title">Matière Créative</h2>
-        <p class="mc-tagline mc-v" data-version="fr">Et si la contrainte était le vrai point de départ de la création&nbsp;?</p>
-        <p class="mc-tagline mc-v" data-version="en">What if constraint was the real starting point of creation?</p>
+    <!-- Texte — après les images -->
+    <div class="mc-desc reveal">
+      <div class="mc-desc-left">
+        <p class="mc-desc-label mc-v" data-version="fr">Mémoire de recherche<br>M1 Design graphique<br>ECV Bordeaux — 2024–2025</p>
+        <p class="mc-desc-label mc-v" data-version="en">Research thesis<br>M1 Graphic Design<br>ECV Bordeaux — 2024–2025</p>
       </div>
-      <div class="mc-content-right">
-        <div class="mc-header-right mc-v" data-version="fr">Mémoire de recherche, M1 Design graphique<br>ECV Bordeaux — 2024–2025</div>
-        <div class="mc-header-right mc-v" data-version="en">Research thesis, M1 Graphic Design<br>ECV Bordeaux — 2024–2025</div>
+      <div class="mc-desc-right">
         <div class="mc-prose mc-v" data-version="fr">
           <p>Matière Créative est un mémoire de recherche qui interroge la place des contraintes, qu'elles soient liées au support, à la technique ou à la méthode, dans le processus créatif. Loin d'être un frein, la limite y est envisagée comme un levier : ce qui oblige à choisir, à hiérarchiser, à inventer.</p>
           <p>Le projet croise deux disciplines qui me sont chères, le design graphique et la photographie. Toutes deux composent avec un cadre, un format, un capteur, une grille, une encre, et toutes deux trouvent dans ces limites une matière à explorer.</p>
@@ -154,33 +197,16 @@
       </div>
     </div>
 
-    <!-- Grille photos 1 -->
-    <div class="mc-grid-2 reveal">
-      <div class="mc-grid-img"><img src="mc-dscf1.jpg" alt=""></div>
-      <div class="mc-grid-img mc-grid-img--offset"><img src="mc-dscf2.jpg" alt=""></div>
-    </div>
-
-    <!-- Photo principale -->
-    <div class="mc-full">
-      <img src="mc-photo.jpg" alt="Matière Créative" class="mc-full-img">
-    </div>
-
-    <!-- Vidéo -->
-    <div class="mc-video-wrap">
-      <video class="mc-video" autoplay muted loop playsinline preload="auto">
-        <source src="mc-video.mp4" type="video/mp4">
-      </video>
-    </div>
-
-    <!-- Poster -->
-    <div class="mc-full">
-      <img src="mc-poster.jpg" alt="Matière Créative — Poster" class="mc-full-img">
-    </div>
-
-    <!-- Grille photos 2 -->
-    <div class="mc-grid-2 reveal">
-      <div class="mc-grid-img"><img src="mc-dscf3.jpg" alt=""></div>
-      <div class="mc-grid-img"><img src="mc-dscf4.jpg" alt=""></div>
+    <!-- Citation -->
+    <div class="mc-quote reveal">
+      <blockquote class="mc-v" data-version="fr">
+        <p>« Les limites sont souvent des avantages déguisés. Elles nous donnent une structure dans laquelle travailler et nous obligent à être plus inventifs. »</p>
+        <cite>Rick Rubin</cite>
+      </blockquote>
+      <blockquote class="mc-v" data-version="en">
+        <p>"Limitations are often advantages in disguise. They give us a structure to work within and force us to be more inventive."</p>
+        <cite>Rick Rubin</cite>
+      </blockquote>
     </div>
 
     <!-- Fiche projet -->
@@ -205,7 +231,10 @@
       </div>
     </div>
 
-    <footer class="site-footer"><span>©Ringer Studio. 2026</span><a href="mailto:noah.lesage.pro@gmail.com">noah.lesage.pro@gmail.com</a></footer>
+    <footer class="site-footer">
+      <span>©Ringer_Studio | Noah Lesage | 2026</span>
+      <a href="mailto:noah.lesage.pro@gmail.com">noah.lesage.pro@gmail.com</a>
+    </footer>
   </section>
 
   <!-- ===================== PROJET : FROM S TO XL ===================== -->
@@ -326,10 +355,15 @@
       <img src="hello-nature.jpg" alt="" class="hello-img" aria-hidden="true">
     </div>
     <footer class="site-footer">
-      <span>©Ringer Studio. 2026</span>
+      <span>©Ringer_Studio | Noah Lesage | 2026</span>
       <a href="mailto:noah.lesage.pro@gmail.com">noah.lesage.pro@gmail.com</a>
     </footer>
   </section>
+
+  <!-- Image flottante hover photo -->
+  <div id="photo-hover-wrap" class="photo-hover-wrap">
+    <img src="" alt="" id="photo-hover-img">
+  </div>
 
 </div>
 
