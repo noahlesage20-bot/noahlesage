@@ -406,8 +406,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ── Footer global — clip-path reveal + arrondi ───────────────────────────
-  const GF_H = 320; // doit correspondre au padding-bottom de .page
-
   // Supprimer les anciens site-footer (remplacés par le footer global)
   pages.forEach(page => {
     const old = page.querySelector('.site-footer');
@@ -425,12 +423,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Scroll : clip-path ouvre la page par le bas + révèle le footer derrière
+  // GF_H = hauteur footer révélée, dynamique selon viewport
   pages.forEach(page => {
     page.addEventListener('scroll', () => {
+      const gfH = window.innerWidth <= 768 ? 520 : 320;
       const dist = page.scrollHeight - page.scrollTop - page.clientHeight;
-      const progress = Math.max(0, Math.min(1, 1 - dist / GF_H));
+      const progress = Math.max(0, Math.min(1, 1 - dist / gfH));
       if (progress > 0) {
-        const revealed = Math.round(progress * GF_H);
+        const revealed = Math.round(progress * gfH);
         const radius   = Math.round(progress * 52);
         page.style.clipPath =
           `inset(0 0 ${revealed}px 0 round 0 0 ${radius}px ${radius}px)`;

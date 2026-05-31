@@ -1137,3 +1137,266 @@ div.mc-v.is-shown   { display: block; }
   background: var(--yellow);
   color: var(--black);
 }
+
+/* ==========================================
+   19. Responsive — mobile ≤ 768px
+========================================== */
+@media (max-width: 768px) {
+
+  /* ── Variables ───────────────────────────── */
+  :root {
+    --pad: 5vw;
+    --header-h: calc(32px + 7vw); /* 16px×2 padding + logo height */
+  }
+
+  body  { cursor: auto; }
+  #cursor-dot { display: none; }
+  html, body { overflow: hidden; }
+
+  /* ── Header — nav horizontale sur une ligne ── */
+  #header {
+    padding: 16px var(--pad);
+    align-items: center;
+  }
+  #header.is-proj,
+  #header.is-hello { padding: 14px var(--pad); }
+
+  .logo { font-size: clamp(18px, 7vw, 32px); }
+
+  #main-nav {
+    display: flex;
+    flex-direction: row;
+    gap: 4vw;
+    align-items: center;
+    text-align: right;
+  }
+  #main-nav a {
+    display: inline-block;
+    font-size: clamp(11px, 3.5vw, 13px);
+    line-height: 1;
+  }
+
+  /* ── Home ───────────────────────────────── */
+  .hero {
+    padding: 2vw var(--pad);
+    padding-top: var(--header-h);
+  }
+  .hero-img-wrap { width: 100%; }
+
+  /* Floats : texte blanc + lisibilité renforcée */
+  .hero-float {
+    font-size: clamp(9px, 2.8vw, 11px);
+    color: rgba(255, 255, 255, 0.85);
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
+  }
+
+  /* ── Work / Photo gallery ────────────────── */
+  .gallery {
+    padding: 0;
+    padding-top: var(--header-h);
+    height: 100vh;
+    position: relative;
+  }
+  .gallery-img-wrap { width: 100%; }
+
+  /* Gradient sombre au bas de la gallery pour la roulette */
+  .gallery::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Roulette repositionnée et lisible en blanc sur l'image */
+  .proj-roulette {
+    width: calc(72% - var(--pad));
+    height: 160px;
+    bottom: var(--pad);
+    z-index: 2;
+    /* Masque haut/bas pour fondu */
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+  }
+
+  /* Texte roulette blanc sur image assombrie */
+  .proj-roulette-item {
+    color: rgba(255, 255, 255, 0.38);
+    font-size: clamp(10px, 3.2vw, 13px);
+  }
+  .proj-roulette-item.is-active {
+    color: #ffffff;
+    font-size: clamp(20px, 5.8vw, 26px);
+  }
+
+  /* ── Photo — liste typographique ─────────── */
+  .photo-list {
+    padding: calc(var(--header-h) + 10vw) var(--pad) 8vw;
+    justify-content: flex-start;
+    gap: 0;
+  }
+  .photo-list-item { padding: 0.1em 0; }
+  .photo-list-name {
+    font-size: clamp(38px, 14vw, 70px);
+    text-align: left;
+    line-height: 0.95;
+  }
+  .photo-hover-wrap { width: 58vw; }
+
+  /* ── Matière Créative ─────────────────────── */
+  .mc-proj-layout {
+    flex-direction: column;
+    padding-top: var(--header-h);
+    min-height: auto;
+  }
+  .mc-proj-left {
+    position: static;
+    width: 100%;
+    height: auto;
+    padding: 5vw var(--pad) 4vw;
+    justify-content: flex-start;
+    gap: 5vw;
+  }
+  .mc-split-top .proj-back { padding: 0; }
+  .mc-progress { display: none; }
+
+  .mc-split-title {
+    font-size: clamp(32px, 10vw, 54px);
+    line-height: 0.9;
+  }
+  .mc-split-tagline p {
+    font-size: clamp(13px, 4vw, 17px);
+    line-height: 1.5;
+  }
+
+  .mc-proj-right { width: 100%; gap: 3px; }
+  .mc-proj-img img,
+  .mc-proj-img video {
+    height: 75vw;
+  }
+
+  /* Description sous les images — 1 colonne */
+  .mc-desc {
+    grid-template-columns: 1fr;
+    gap: 4vw;
+    padding: 8vw var(--pad) 5vw;
+  }
+  .mc-desc-label { font-size: 10px; margin-bottom: 2vw; }
+
+  /* Citation — colonne unique */
+  .mc-quote {
+    grid-template-columns: 1fr;
+    padding: 6vw var(--pad) 4vw;
+  }
+  .mc-quote blockquote { grid-column: 1; }
+  .mc-quote p {
+    font-size: clamp(17px, 5vw, 26px);
+    line-height: 1.35;
+  }
+
+  /* Fiche projet verticale */
+  .mc-fiche-row {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* Grille photos MC */
+  .mc-grid-2 {
+    grid-template-columns: 1fr;
+    gap: 3px;
+    padding: 0 0 2vw;
+  }
+  .mc-grid-img img { height: 60vw; }
+  .mc-grid-img--offset { margin-top: 0; }
+  .mc-full-img { height: 55vw; }
+  .mc-video { height: 55vw; }
+
+  /* ── Pages projet génériques ───────────────── */
+  .proj-page { padding-top: var(--header-h); }
+  .proj-back { padding: var(--pad); padding-top: 18px; }
+  .proj-hero { padding: 0 var(--pad); }
+  .proj-hero-img { max-height: 44vw; }
+
+  .proj-title-block { padding: 32px var(--pad) 24px; }
+  .proj-title {
+    font-size: clamp(28px, 9.5vw, 50px);
+    letter-spacing: -0.03em;
+  }
+  .proj-meta { font-size: 12px; }
+
+  .proj-duo {
+    grid-template-columns: 1fr;
+    gap: 3vw;
+  }
+  .proj-duo-img { max-height: 44vw; }
+
+  /* ── Say Hello ──────────────────────────────── */
+  .hello-top { padding-top: var(--header-h); }
+
+  .hello-title {
+    font-size: clamp(22px, 6.5vw, 36px);
+    line-height: 1.25;
+    padding-top: 32px;
+  }
+  .hello-contacts {
+    flex-direction: column;
+    gap: 24px;
+    padding-top: 32px;
+    padding-bottom: 44px;
+  }
+  .hello-col-label { font-size: clamp(14px, 4.5vw, 18px); }
+  .hello-col a {
+    font-size: clamp(13px, 4vw, 16px);
+    line-height: 1.9;
+  }
+  .hello-img-wrap { height: 52vw; }
+
+  /* ── Footer ─────────────────────────────────── */
+  .page { padding-bottom: 520px; }
+
+  .gf { padding: 9vw var(--pad) 5vw; }
+  .gf-inner { gap: 6vw; }
+
+  .gf-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6vw;
+  }
+  .gf-brand { font-size: clamp(18px, 5.5vw, 28px); }
+
+  .gf-cols {
+    flex-wrap: wrap;
+    gap: 5vw 10vw;
+    width: 100%;
+  }
+  .gf-col { gap: 5px; }
+  .gf-col-head { font-size: 9px; margin-bottom: 4px; }
+  .gf-link { font-size: 12px; line-height: 1.6; }
+
+  .gf-socials { flex-direction: row; gap: 24px; }
+  .gf-ig svg { width: 20px; height: 20px; }
+  .gf-ig span { font-size: 10px; }
+
+  .gf-bottom {
+    padding-top: 5vw;
+    font-size: clamp(9px, 2.5vw, 11px);
+  }
+
+  /* ── Loader ─────────────────────────────────── */
+  #loader-percent { font-size: clamp(56px, 19vw, 120px); }
+  #loader { padding: 18px var(--pad); }
+}
+
+/* ── Très petits écrans ≤ 390px ──────────────── */
+@media (max-width: 390px) {
+  .logo            { font-size: clamp(16px, 6.5vw, 26px); }
+  #main-nav a      { font-size: clamp(10px, 3.2vw, 12px); gap: 3vw; }
+  .proj-title      { font-size: clamp(24px, 9vw, 44px); }
+  .photo-list-name { font-size: clamp(34px, 13.5vw, 56px); }
+  .mc-split-title  { font-size: clamp(28px, 10.5vw, 46px); }
+  .proj-roulette   { width: calc(80% - var(--pad)); }
+}
