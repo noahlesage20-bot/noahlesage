@@ -333,12 +333,17 @@ document.addEventListener('DOMContentLoaded', () => {
       setActive(activeIdx + (e.deltaY > 0 ? 1 : -1));
     }, { passive: false });
 
-    // Touch support
+    // Touch roulette — preventDefault pour ne pas scroller la page
     let touchY = 0;
-    roulette.addEventListener('touchstart', e => { touchY = e.touches[0].clientY; }, { passive: true });
+    roulette.addEventListener('touchstart', e => {
+      touchY = e.touches[0].clientY;
+    }, { passive: true });
+    roulette.addEventListener('touchmove', e => {
+      e.preventDefault(); // bloque le scroll vertical de la page quand on swipe la roulette
+    }, { passive: false });
     roulette.addEventListener('touchend', e => {
       const diff = touchY - e.changedTouches[0].clientY;
-      if (Math.abs(diff) > 28) setActive(activeIdx + (diff > 0 ? 1 : -1));
+      if (Math.abs(diff) > 20) setActive(activeIdx + (diff > 0 ? 1 : -1));
     }, { passive: true });
 
     // Click: inactive → activate; active + data-page → navigate
@@ -349,14 +354,16 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    // Image : scroll → change de projet, clic → navigue
+    // Image : wheel + swipe horizontal (mobile) → change de projet, tap → navigue
     const imgWrap = img.closest('.gallery-img-wrap');
     if (imgWrap) {
       imgWrap.style.cursor = 'pointer';
+
       imgWrap.addEventListener('click', () => {
         const page = items[activeIdx] && items[activeIdx].dataset.page;
         if (page && !transitioning) navigateTo(page);
       });
+
       imgWrap.addEventListener('wheel', e => {
         e.preventDefault();
         const now = Date.now();
@@ -364,7 +371,47 @@ document.addEventListener('DOMContentLoaded', () => {
         lastWheel = now;
         setActive(activeIdx + (e.deltaY > 0 ? 1 : -1));
       }, { passive: false });
+
+      // Swipe gauche/droite sur l'image pour mobile
+      let swipeX0 = 0, swipeY0 = 0;
+      imgWrap.addEventListener('touchstart', e => {
+        swipeX0 = e.touches[0].clientX;
+        swipeY0 = e.touches[0].clientY;
+      }, { passive: true });
+      imgWrap.addEventListener('touchend', e => {
+        const dx = swipeX0 - e.changedTouches[0].clientX;
+        const dy = swipeY0 - e.changedTouches[0].clientY;
+        // Ne réagit que si le geste est majoritairement horizontal
+        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+          const now = Date.now();
+          if (now - lastWheel < 380) return;
+          lastWheel = now;
+          setActive(activeIdx + (dx > 0 ? 1 : -1));
+        }
+      }, { passive: true });
     }
+
+    // Indicateurs de position (dots) — mobile seulement, mis à jour dans setActive
+    let dots = [];
+    const gallery = roulette.closest('.gallery');
+    if (gallery && window.innerWidth <= 768) {
+      const hint = document.createElement('div');
+      hint.className = 'gallery-swipe-hint';
+      items.forEach((_, i) => {
+        const dot = document.createElement('span');
+        if (i === 0) dot.classList.add('is-active');
+        hint.appendChild(dot);
+      });
+      gallery.appendChild(hint);
+      dots = Array.from(hint.querySelectorAll('span'));
+    }
+
+    // Patch setActive pour mettre à jour les dots
+    const _baseSetActive = setActive;
+    setActive = function(idx) {
+      _baseSetActive(idx);
+      dots.forEach((d, i) => d.classList.toggle('is-active', i === activeIdx));
+    };
 
     // Initial state
     applyStyles();

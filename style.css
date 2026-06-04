@@ -1319,40 +1319,67 @@ div.mc-v.is-shown   { display: block; }
     height: 100vh;
     position: relative;
   }
-  .gallery-img-wrap { width: 100%; }
+  .gallery-img-wrap {
+    width: 100%;
+    /* Swipe horizontal autorisé, scroll vertical bloqué sur l'image */
+    touch-action: pan-x pinch-zoom;
+  }
 
   /* Gradient sombre au bas de la gallery pour la roulette */
   .gallery::after {
     content: '';
     position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 50%;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, transparent 100%);
+    bottom: 0; left: 0; right: 0;
+    height: 55%;
+    background: linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 100%);
     pointer-events: none;
     z-index: 1;
   }
 
-  /* Roulette repositionnée et lisible en blanc sur l'image */
+  /* Roulette : zone tactile généreuse, ne scroll plus la page */
   .proj-roulette {
     width: calc(72% - var(--pad));
-    height: 160px;
-    bottom: var(--pad);
+    height: 200px;
+    bottom: calc(var(--pad) + 2vw);
     z-index: 2;
-    /* Masque haut/bas pour fondu */
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
-    mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+    touch-action: none; /* gestion manuelle dans le JS */
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%);
   }
 
   /* Texte roulette blanc sur image assombrie */
   .proj-roulette-item {
-    color: rgba(255, 255, 255, 0.38);
-    font-size: clamp(10px, 3.2vw, 13px);
+    color: rgba(255, 255, 255, 0.4);
+    font-size: clamp(11px, 3.5vw, 14px);
+    padding: 3px 0;
   }
   .proj-roulette-item.is-active {
     color: #ffffff;
-    font-size: clamp(20px, 5.8vw, 26px);
+    font-size: clamp(22px, 6.2vw, 28px);
+  }
+
+  /* Work : padding réduit — le footer est accessible mais sans y tomber en scrollant */
+  #page-work { padding-bottom: 160px; }
+
+  /* Indicateurs swipe sur l'image */
+  .gallery-swipe-hint {
+    position: absolute;
+    bottom: calc(var(--pad) + 200px + 1vw);
+    right: var(--pad);
+    z-index: 3;
+    display: flex;
+    gap: 6px;
+    pointer-events: none;
+  }
+  .gallery-swipe-hint span {
+    width: 22px; height: 2px;
+    border-radius: 1px;
+    background: rgba(255,255,255,0.35);
+    transition: background 0.3s ease;
+  }
+  .gallery-swipe-hint span.is-active {
+    background: rgba(255,255,255,0.9);
+    width: 32px;
   }
 
   /* ── Photo — liste typographique ─────────── */
