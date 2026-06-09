@@ -178,19 +178,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  const projPages  = new Set(['matiere','stoxl','tapage','palais','calsmith','refonte','ringer','poster']);
+  const projPages  = new Set(['matiere','stoxl','tapage','palais','calsmith','poster']);
   const siteHeader = document.getElementById('header');
   const pageTitles = {
     home: 'Ringer Studio.', work: 'Work — Ringer Studio.', photo: 'Photo — Ringer Studio.',
     hello: 'Contact — Ringer Studio.', matiere: 'Matière Créative — Ringer Studio.',
     stoxl: 'From S to XL — Ringer Studio.', tapage: 'Tapage — Ringer Studio.',
     palais: 'Palais Bulles — Ringer Studio.', calsmith: 'Cal Smith — Ringer Studio.',
-    refonte: 'Refonte JOP 2024 — Ringer Studio.', ringer: 'Ringer Projet — Ringer Studio.',
     poster: 'Poster — Ringer Studio.',
   };
 
   function updateNavActive(target) {
-    const workPages = ['work','matiere','stoxl','tapage','palais','calsmith','refonte','ringer','poster'];
+    const workPages = ['work','matiere','stoxl','tapage','palais','calsmith','poster'];
     const mainTarget = workPages.includes(target) ? 'work' : target;
     navLinks.forEach(l => l.classList.toggle('is-active', l.dataset.target === mainTarget));
     if (pageTitles[target]) document.title = pageTitles[target];
@@ -637,16 +636,12 @@ document.addEventListener('DOMContentLoaded', () => {
       'tapage.tagline': 'Graphisme — Affiche',
       'palais.tagline': 'Direction artistique — Identité visuelle',
       'calsmith.tagline': 'Graphisme — Identité visuelle',
-      'refonte.tagline': 'Direction artistique — Identité visuelle',
-      'ringer.tagline': 'Direction artistique — Brand design',
       'poster.tagline': 'Graphisme — Sérigraphie',
       'fiche.year': 'Année',
       'stoxl.type': 'Direction artistique', 'stoxl.discipline': 'Graphisme, Identité visuelle',
       'tapage.type': 'Graphisme', 'tapage.discipline': 'Affiche, Typographie',
       'palais.type': 'Direction artistique', 'palais.discipline': 'Identité visuelle, Photographie',
       'calsmith.type': 'Graphisme', 'calsmith.discipline': 'Identité visuelle, Musique',
-      'refonte.type': 'Direction artistique', 'refonte.discipline': 'Identité visuelle, Motion design',
-      'ringer.type': 'Direction artistique', 'ringer.discipline': 'Identité visuelle, Brand design',
       'poster.type': 'Graphisme', 'poster.discipline': 'Sérigraphie, Affiche',
     },
     en: {
@@ -661,16 +656,12 @@ document.addEventListener('DOMContentLoaded', () => {
       'tapage.tagline': 'Graphic design — Poster',
       'palais.tagline': 'Art direction — Visual identity',
       'calsmith.tagline': 'Graphic design — Visual identity',
-      'refonte.tagline': 'Art direction — Visual identity',
-      'ringer.tagline': 'Art direction — Brand design',
       'poster.tagline': 'Graphic design — Screen printing',
       'fiche.year': 'Year',
       'stoxl.type': 'Art direction', 'stoxl.discipline': 'Graphic design, Visual identity',
       'tapage.type': 'Graphic design', 'tapage.discipline': 'Poster, Typography',
       'palais.type': 'Art direction', 'palais.discipline': 'Visual identity, Photography',
       'calsmith.type': 'Graphic design', 'calsmith.discipline': 'Visual identity, Music',
-      'refonte.type': 'Art direction', 'refonte.discipline': 'Visual identity, Motion design',
-      'ringer.type': 'Art direction', 'ringer.discipline': 'Visual identity, Brand design',
       'poster.type': 'Graphic design', 'poster.discipline': 'Screen printing, Poster',
     }
   };
