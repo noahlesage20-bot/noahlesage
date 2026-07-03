@@ -2,9 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── Elements ──────────────────────────────────────────────────────────────
   const loader        = document.getElementById('loader');
-  const bandTop       = document.getElementById('loader-band-top');
-  const bandMid       = document.getElementById('loader-band-mid');
-  const bandBot       = document.getElementById('loader-band-bot');
+  const loaderBg      = document.getElementById('loader-bg');
+  const loaderBrand   = document.getElementById('loader-brand');
   const loaderPct     = document.getElementById('loader-percent');
   const site          = document.getElementById('site');
   const overlay       = document.getElementById('page-transition');
@@ -32,89 +31,138 @@ document.addEventListener('DOMContentLoaded', () => {
     cursorVisible = false;
   });
 
-  // ── Loader ────────────────────────────────────────────────────────────────
-  let progress = 0;
-  let done     = false;
+  // ── Loader = Orbit ───────────────────────────────────────────────────────
+  const O_SRCS  = ['mc-poster.jpg', 'From S to XL anim.mp4', 'Palais bulles.jpg', 'Cal Smith.jpg', 'a2.jpg'];
+  const O_TILTS = [-8, 12, -4, 9, -13];
+  O_SRCS.forEach(src => { const i = new Image(); i.src = src; });
 
-  function lColor(top, mid, bot) {
-    bandTop.style.backgroundColor = top;
-    bandMid.style.backgroundColor = mid;
-    bandBot.style.backgroundColor = bot;
+  const O_VW = window.innerWidth, O_VH = window.innerHeight;
+  const O_N  = O_SRCS.length;
+  const O_R  = Math.min(O_VW, O_VH) * 0.26;
+  const O_W  = Math.min(O_VW * 0.17, 210);
+  const O_H  = O_W * 1.32;
+  const O_CX = O_VW / 2;
+  const O_CY = O_VH / 2;
+
+  let orbitAngle   = 0;
+  let orbitRunning = true;
+  let progress     = 0;
+  let done         = false;
+
+  // Build orbit wraps inside loader (% and brand overlay on top via z-index:1)
+  const orbitWraps = O_SRCS.map((src, i) => {
+    const a = (i / O_N) * 2 * Math.PI;
+    const x = O_CX + Math.cos(a) * O_R - O_W / 2;
+    const y = O_CY + Math.sin(a) * O_R - O_H / 2;
+    const wrap = document.createElement('div');
+    wrap.style.cssText = `
+      position:absolute;width:${O_W}px;height:${O_H}px;
+      overflow:hidden;border-radius:4px;
+      box-shadow:0 4px 22px rgba(0,0,0,0.12);
+      will-change:transform;opacity:0;transition:opacity 0.5s ease;
+      transform:translate(${x}px,${y}px) rotate(${O_TILTS[i]}deg);
+    `;
+    const media = src.endsWith('.mp4') ? document.createElement('video') : document.createElement('img');
+    media.src = src;
+    if (media.tagName === 'VIDEO') { media.muted = true; media.loop = true; media.autoplay = true; media.setAttribute('playsinline',''); }
+    media.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+    wrap.appendChild(media);
+    loader.appendChild(wrap);
+    return wrap;
+  });
+
+  // Stagger appear
+  orbitWraps.forEach((w, i) => setTimeout(() => { w.style.opacity = '1'; }, 150 + i * 90));
+
+  // Continuous orbit loop (runs all through loading)
+  function orbitLoop() {
+    if (!orbitRunning) return;
+    orbitAngle += 0.45;
+    orbitWraps.forEach((wrap, i) => {
+      const a = ((i / O_N) * 360 + orbitAngle) * Math.PI / 180;
+      const x = O_CX + Math.cos(a) * O_R - O_W / 2;
+      const y = O_CY + Math.sin(a) * O_R - O_H / 2;
+      wrap.style.transform = `translate(${x}px,${y}px) rotate(${O_TILTS[i]}deg)`;
+    });
+    requestAnimationFrame(orbitLoop);
   }
+  requestAnimationFrame(orbitLoop);
 
-  function lFlex(top, mid, bot) {
-    bandTop.style.flexGrow = top;
-    bandMid.style.flexGrow = mid;
-    bandBot.style.flexGrow = bot;
-  }
-
-  function applyStage(p) {
-    if (p < 28) {
-      // 0% — Jaune uni
-      lColor('#f6ff90', '#f6ff90', '#f6ff90');
-      lFlex(38, 24, 38);
-
-    } else if (p < 50) {
-      // 25% — Bandes bleues + blanc, épaisses
-      lColor('#a2c4fa', '#ffffff', '#a2c4fa');
-      lFlex(38, 24, 38);
-
-    } else if (p < 75) {
-      // 50%→75% — Rose puis crème, bandes s'amincissent progressivement
-      const t     = (p - 50) / 25;                      // 0 → 1
-      const sides = Math.round(38 - t * 25);             // 38 → 13
-      const color = p < 62 ? '#f2b9d1' : '#f4f2d7';     // rose → crème à mi-chemin
-      lColor(color, '#ffffff', color);
-      lFlex(sides, 100 - sides * 2, sides);
-
-    } else if (p < 100) {
-      // 75%→100% — Crème, bandes fines qui disparaissent
-      const t     = (p - 75) / 25;                      // 0 → 1
-      const sides = Math.max(0, Math.round(13 * (1 - t))); // 13 → 0
-      lColor('#f4f2d7', '#ffffff', '#f4f2d7');
-      lFlex(sides, 100 - sides * 2, sides);
-
-    } else {
-      // 100% — Tout blanc
-      lColor('#ffffff', '#ffffff', '#ffffff');
-      lFlex(0, 100, 0);
-    }
-  }
-
+  // % counter (orbit already running, just update text)
   const step = () => {
     if (done) return;
-    progress += Math.floor(Math.random() * 4) + 1;
-
+    progress += Math.floor(Math.random() * 3) + 1;
     if (progress >= 100) {
       progress = 100;
       done = true;
       loaderPct.textContent = '100%';
-      applyStage(100);
-      setTimeout(revealSite, 700);
+      loaderBrand.classList.add('is-visible');
+      setTimeout(flyToHero, 550);
       return;
     }
-
     loaderPct.textContent = progress + '%';
-    applyStage(progress);
-    setTimeout(step, 28 + Math.random() * 22);
+    setTimeout(step, 30 + Math.random() * 25);
   };
-
   setTimeout(step, 120);
 
+  function flyToHero() {
+    // Position actuelle de a2.jpg avant d'arrêter l'orbite
+    const a2A  = ((4 / O_N) * 360 + orbitAngle) * Math.PI / 180;
+    const a2CX = O_CX + Math.cos(a2A) * O_R;
+    const a2CY = O_CY + Math.sin(a2A) * O_R;
+
+    // L'orbite continue de tourner pendant que le loader remonte — rien ne s'arrête
+
+    // flyDiv : position:fixed, survit au slide-up du loader
+    const flyDiv = document.createElement('div');
+    flyDiv.style.cssText = `
+      position:fixed;z-index:8000;pointer-events:none;overflow:hidden;
+      border-radius:4px;
+      left:${a2CX - O_W / 2}px;top:${a2CY - O_H / 2}px;
+      width:${O_W}px;height:${O_H}px;
+      transform:rotate(${O_TILTS[4]}deg);
+    `;
+    const flyImg = document.createElement('img');
+    flyImg.src = 'a2.jpg';
+    flyImg.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+    flyDiv.appendChild(flyImg);
+    document.body.appendChild(flyDiv);
+
+    // Révèle le site → tout le loader (images + brand) remonte en bloc
+    revealSite();
+
+    setTimeout(() => {
+      const heroWrap = document.querySelector('#page-home .hero-img-wrap');
+      const heroRect = heroWrap.getBoundingClientRect();
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const d = '0.95s cubic-bezier(0.76,0,0.24,1)';
+          flyDiv.style.transition   = `left ${d},top ${d},width ${d},height ${d},border-radius ${d},transform ${d}`;
+          flyDiv.style.left         = heroRect.left   + 'px';
+          flyDiv.style.top          = heroRect.top    + 'px';
+          flyDiv.style.width        = heroRect.width  + 'px';
+          flyDiv.style.height       = heroRect.height + 'px';
+          flyDiv.style.borderRadius = '0';
+          flyDiv.style.transform    = '';
+
+          setTimeout(() => {
+            flyDiv.style.transition = 'opacity 0.55s ease';
+            flyDiv.style.opacity    = '0';
+            document.getElementById('page-home').classList.add('anim-ready');
+            setTimeout(() => flyDiv.remove(), 650);
+          }, 980);
+        });
+      });
+    }, 60);
+  }
+
   function revealSite() {
-    // Le site s'active derrière le loader blanc — fond identique, invisible
     site.classList.remove('is-hidden');
     const home = document.getElementById('page-home');
     home.classList.add('is-active');
-
-    // Le loader se lève lentement : le contenu home commence à percer (nav, captions)
-    // pendant que "100%" est encore présent — exactement comme dans le Figma
-    setTimeout(() => {
-      loader.classList.add('is-gone'); // fondu 0.9s
-      home.classList.add('anim-ready'); // éléments animent pendant le fondu
-    }, 380);
-
-    setTimeout(() => loader.remove(), 1400);
+    setTimeout(() => loader.classList.add('is-gone'), 480);
+    setTimeout(() => loader.remove(), 1700);
   }
 
   // ── Navigation ────────────────────────────────────────────────────────────
@@ -130,19 +178,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  const projPages  = new Set(['matiere','stoxl','tapage','palais','calsmith','refonte','ringer','poster']);
+  const projPages  = new Set(['matiere','stoxl','tapage','palais','calsmith','poster']);
   const siteHeader = document.getElementById('header');
   const pageTitles = {
     home: 'Ringer Studio.', work: 'Work — Ringer Studio.', photo: 'Photo — Ringer Studio.',
     hello: 'Contact — Ringer Studio.', matiere: 'Matière Créative — Ringer Studio.',
     stoxl: 'From S to XL — Ringer Studio.', tapage: 'Tapage — Ringer Studio.',
     palais: 'Palais Bulles — Ringer Studio.', calsmith: 'Cal Smith — Ringer Studio.',
-    refonte: 'Refonte JOP 2024 — Ringer Studio.', ringer: 'Ringer Projet — Ringer Studio.',
     poster: 'Poster — Ringer Studio.',
   };
 
   function updateNavActive(target) {
-    const workPages = ['work','matiere','stoxl','tapage','palais','calsmith','refonte','ringer','poster'];
+    const workPages = ['work','matiere','stoxl','tapage','palais','calsmith','poster'];
     const mainTarget = workPages.includes(target) ? 'work' : target;
     navLinks.forEach(l => l.classList.toggle('is-active', l.dataset.target === mainTarget));
     if (pageTitles[target]) document.title = pageTitles[target];
@@ -165,6 +212,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (siteHeader) siteHeader.classList.toggle('is-proj', projPages.has(target));
     if (siteHeader) siteHeader.classList.toggle('is-hello', target === 'hello');
     if (target === 'matiere') setTimeout(checkMCReveal, 80);
+    // Reveal initial + progress bar pour les pages projet génériques
+    if (projPages.has(target) && target !== 'matiere') {
+      setTimeout(() => {
+        if (!next) return;
+        next.querySelectorAll('.reveal:not(.is-visible)').forEach(el => {
+          if (el.getBoundingClientRect().top < window.innerHeight + 50) el.classList.add('is-visible');
+        });
+      }, 80);
+    }
     return next;
   }
 
@@ -200,7 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const items = Array.from(track.querySelectorAll('.proj-roulette-item'));
     let activeIdx  = startIdx || 0;
-    let currentSrc = items[activeIdx] ? items[activeIdx].dataset.img : '';
+    let currentSrc = items[activeIdx] ? (items[activeIdx].dataset.video || items[activeIdx].dataset.img) : '';
     let lastWheel  = 0;
 
     function applyStyles() {
@@ -225,13 +281,35 @@ document.addEventListener('DOMContentLoaded', () => {
       track.style.transform = `translateY(${matrix.m42 + delta}px)`;
     }
 
-    function changeImage(src) {
-      if (!src || src === currentSrc) return;
-      currentSrc = src;
-      img.classList.add('is-fading');
+    // Élément vidéo créé dynamiquement pour les slides mp4
+    const vid = document.createElement('video');
+    vid.className = 'gallery-img';
+    vid.muted = true; vid.loop = true; vid.setAttribute('playsinline', '');
+    vid.style.cssText = 'display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
+    if (img.parentNode) img.parentNode.style.position = 'relative';
+    if (img.parentNode) img.parentNode.appendChild(vid);
+
+    let showingVid = false;
+
+    function changeMedia(item) {
+      const isVideo = !!(item.dataset.video);
+      const newSrc  = isVideo ? item.dataset.video : item.dataset.img;
+      if (!newSrc || newSrc === currentSrc) return;
+      currentSrc = newSrc;
+
+      const curEl = showingVid ? vid : img;
+      const nxtEl = isVideo   ? vid : img;
+
+      curEl.classList.add('is-fading');
       setTimeout(() => {
-        img.src = src;
-        img.classList.remove('is-fading');
+        curEl.style.display = 'none';
+        curEl.classList.remove('is-fading');
+        if (isVideo) { vid.src = newSrc; vid.load(); vid.play().catch(() => {}); }
+        else         { img.src = newSrc; if (showingVid) { vid.pause(); vid.src = ''; } }
+        showingVid = isVideo;
+        nxtEl.style.display = 'block';
+        nxtEl.classList.add('is-fading');
+        requestAnimationFrame(() => requestAnimationFrame(() => nxtEl.classList.remove('is-fading')));
       }, 420);
     }
 
@@ -240,10 +318,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (idx === activeIdx) return;
       activeIdx = idx;
       applyStyles();
-      // Re-center: once now (fast), once after font-size transition ends
       centerTrack();
       setTimeout(centerTrack, 520);
-      changeImage(items[idx].dataset.img);
+      changeMedia(items[idx]);
     }
 
     // Wheel — scroll on roulette area cycles projects
@@ -255,12 +332,17 @@ document.addEventListener('DOMContentLoaded', () => {
       setActive(activeIdx + (e.deltaY > 0 ? 1 : -1));
     }, { passive: false });
 
-    // Touch support
+    // Touch roulette — preventDefault pour ne pas scroller la page
     let touchY = 0;
-    roulette.addEventListener('touchstart', e => { touchY = e.touches[0].clientY; }, { passive: true });
+    roulette.addEventListener('touchstart', e => {
+      touchY = e.touches[0].clientY;
+    }, { passive: true });
+    roulette.addEventListener('touchmove', e => {
+      e.preventDefault(); // bloque le scroll vertical de la page quand on swipe la roulette
+    }, { passive: false });
     roulette.addEventListener('touchend', e => {
       const diff = touchY - e.changedTouches[0].clientY;
-      if (Math.abs(diff) > 28) setActive(activeIdx + (diff > 0 ? 1 : -1));
+      if (Math.abs(diff) > 20) setActive(activeIdx + (diff > 0 ? 1 : -1));
     }, { passive: true });
 
     // Click: inactive → activate; active + data-page → navigate
@@ -271,14 +353,16 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    // Image : scroll → change de projet, clic → navigue
+    // Image : wheel + swipe horizontal (mobile) → change de projet, tap → navigue
     const imgWrap = img.closest('.gallery-img-wrap');
     if (imgWrap) {
       imgWrap.style.cursor = 'pointer';
+
       imgWrap.addEventListener('click', () => {
         const page = items[activeIdx] && items[activeIdx].dataset.page;
         if (page && !transitioning) navigateTo(page);
       });
+
       imgWrap.addEventListener('wheel', e => {
         e.preventDefault();
         const now = Date.now();
@@ -286,6 +370,24 @@ document.addEventListener('DOMContentLoaded', () => {
         lastWheel = now;
         setActive(activeIdx + (e.deltaY > 0 ? 1 : -1));
       }, { passive: false });
+
+      // Swipe gauche/droite sur l'image pour mobile
+      let swipeX0 = 0, swipeY0 = 0;
+      imgWrap.addEventListener('touchstart', e => {
+        swipeX0 = e.touches[0].clientX;
+        swipeY0 = e.touches[0].clientY;
+      }, { passive: true });
+      imgWrap.addEventListener('touchend', e => {
+        const dx = swipeX0 - e.changedTouches[0].clientX;
+        const dy = swipeY0 - e.changedTouches[0].clientY;
+        // Ne réagit que si le geste est majoritairement horizontal
+        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+          const now = Date.now();
+          if (now - lastWheel < 380) return;
+          lastWheel = now;
+          setActive(activeIdx + (dx > 0 ? 1 : -1));
+        }
+      }, { passive: true });
     }
 
     // Initial state
@@ -298,6 +400,64 @@ document.addEventListener('DOMContentLoaded', () => {
   initRoulette('work-roulette',  'work-track',  'work-img',  0);
   initRoulette('photo-roulette', 'photo-track', 'photo-img', 0);
 
+  // ── Hero slideshow + hover work ──────────────────────────────────────────
+  const heroSlideImg   = document.getElementById('hero-slide-img');
+  const heroSlideVideo = document.getElementById('hero-slide-video');
+  const heroSlides = [
+    { src: 'mc-poster.jpg' },
+    { src: 'From S to XL anim.mp4', video: true },
+    { src: 'Palais bulles.jpg' },
+    { src: 'Cal Smith.jpg' },
+    { src: 'a2.jpg' },
+  ];
+  let heroSlideIdx = 0;
+  let heroShowingVideo = false;
+
+  // Précharge les images (pas les vidéos)
+  heroSlides.forEach(s => { if (!s.video) { const i = new Image(); i.src = s.src; } });
+
+  function heroShowSlide(slide) {
+    if (slide.video) {
+      heroSlideImg.style.opacity = '0';
+      setTimeout(() => {
+        heroSlideImg.style.display = 'none';
+        heroSlideVideo.src = slide.src;
+        heroSlideVideo.style.display = 'block';
+        heroSlideVideo.style.opacity = '0';
+        heroSlideVideo.load();
+        heroSlideVideo.play().catch(() => {});
+        requestAnimationFrame(() => requestAnimationFrame(() => { heroSlideVideo.style.opacity = '1'; }));
+        heroShowingVideo = true;
+      }, 560);
+    } else {
+      const prev = heroShowingVideo ? heroSlideVideo : heroSlideImg;
+      prev.style.opacity = '0';
+      setTimeout(() => {
+        if (heroShowingVideo) {
+          heroSlideVideo.style.display = 'none';
+          heroSlideVideo.pause();
+          heroSlideVideo.src = '';
+          heroShowingVideo = false;
+        }
+        heroSlideImg.src = slide.src;
+        heroSlideImg.style.display = 'block';
+        heroSlideImg.style.opacity = '0';
+        requestAnimationFrame(() => requestAnimationFrame(() => { heroSlideImg.style.opacity = '1'; }));
+      }, 560);
+    }
+  }
+
+  setInterval(() => {
+    if (!document.getElementById('page-home').classList.contains('is-active')) return;
+    heroSlideIdx = (heroSlideIdx + 1) % heroSlides.length;
+    heroShowSlide(heroSlides[heroSlideIdx]);
+  }, 3800);
+
+  const heroImgWrap = document.getElementById('hero-img-wrap');
+  if (heroImgWrap) {
+    heroImgWrap.addEventListener('click', () => navigateTo('work'));
+  }
+
   // ── Back button (Ringer projet → Work) ───────────────────────────────────
   document.querySelectorAll('.js-back').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -306,32 +466,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // ── Matière Créative — toggle FR / EN ────────────────────────────────────
-  (function initMCLang() {
-    const page = document.getElementById('page-matiere');
-    if (!page) return;
-
-    let currentLang = 'fr';
-
-    function applyLang(lang) {
-      currentLang = lang;
-      // Boutons
-      page.querySelectorAll('.mc-lang-btn').forEach(b =>
-        b.classList.toggle('is-active', b.dataset.lang === lang)
-      );
-      // Éléments bilingues
-      page.querySelectorAll('.mc-v').forEach(el => {
-        el.classList.toggle('is-shown', el.dataset.version === lang);
-      });
-    }
-
-    page.querySelectorAll('.mc-lang-btn').forEach(btn => {
-      btn.addEventListener('click', () => applyLang(btn.dataset.lang));
-    });
-
-    // État initial
-    applyLang('fr');
-  })();
+  // État initial MC (data-version fr)
+  document.querySelectorAll('.mc-v').forEach(el => {
+    el.classList.toggle('is-shown', el.dataset.version === 'fr');
+  });
 
   // ── Matière Créative — scroll reveal + barre de progression ─────────────
   const mcPage         = document.getElementById('page-matiere');
@@ -385,6 +523,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { passive: true });
   }
 
+  // ── Pages projet — progress bar + scroll reveal ──────────────────────────
+  projPages.forEach(pageId => {
+    if (pageId === 'matiere') return; // géré séparément
+    const projPage = document.getElementById('page-' + pageId);
+    if (!projPage) return;
+    const fill = projPage.querySelector('.proj-progress-fill');
+    projPage.addEventListener('scroll', () => {
+      // Barre de progression
+      if (fill) {
+        const max = projPage.scrollHeight - projPage.clientHeight;
+        fill.style.height = max > 0 ? (projPage.scrollTop / max * 100) + '%' : '0%';
+      }
+      // Reveal au scroll
+      projPage.querySelectorAll('.reveal:not(.is-visible)').forEach(el => {
+        if (el.getBoundingClientRect().top < window.innerHeight + 50) el.classList.add('is-visible');
+      });
+    }, { passive: true });
+  });
+
   // ── Photo — image flottante au hover ─────────────────────────────────────
   const photoHoverWrap = document.getElementById('photo-hover-wrap');
   const photoHoverImg  = document.getElementById('photo-hover-img');
@@ -403,6 +560,241 @@ document.addEventListener('DOMContentLoaded', () => {
       if (photoHoverWrap) photoHoverWrap.classList.remove('is-visible');
       document.querySelectorAll('.photo-list-item').forEach(i => i.classList.remove('is-hovered'));
     });
+  });
+
+  // ── Formulaire Say Hello — soumission AJAX ───────────────────────────────
+  const helloForm = document.querySelector('.hello-form');
+  if (helloForm) {
+    helloForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const btn = helloForm.querySelector('.hello-form-btn');
+      btn.disabled = true;
+      btn.textContent = '…';
+
+      try {
+        const res = await fetch(helloForm.action, {
+          method: 'POST',
+          body: new FormData(helloForm),
+          headers: { Accept: 'application/json' }
+        });
+
+        if (res.ok) {
+          btn.style.transition = 'opacity 0.3s ease';
+          btn.style.opacity = '0';
+          setTimeout(() => {
+            btn.style.display = 'none';
+            const confirm = document.createElement('p');
+            confirm.className = 'hello-form-confirm';
+            confirm.textContent = i18n[siteLang]['form.confirm'];
+            helloForm.appendChild(confirm);
+            requestAnimationFrame(() => requestAnimationFrame(() => confirm.classList.add('is-visible')));
+          }, 320);
+        } else {
+          btn.disabled = false;
+          btn.textContent = 'Réessayer →';
+        }
+      } catch {
+        btn.disabled = false;
+        btn.textContent = 'Réessayer →';
+      }
+    });
+  }
+
+  // ── Traduction FR / EN ───────────────────────────────────────────────────
+  const i18n = {
+    fr: {
+      'hello.1': 'Un projet ?', 'hello.2': 'Un besoin ?', 'hello.3': 'Parlons-en.',
+      'form.name': 'Nom', 'form.name.ph': 'Votre nom',
+      'form.email.ph': 'votre@email.com',
+      'form.msg.ph': 'Parlez-moi de votre projet…',
+      'form.send': 'Envoyer →', 'form.confirm': 'Message envoyé — à bientôt.',
+      'hello.social': 'Réseaux', 'hello.freelance': 'Freelance indépendant',
+      'photo.voyage': 'Voyage',
+      'stoxl.tagline': 'Direction artistique — Graphisme',
+      'tapage.tagline': 'Graphisme — Affiche',
+      'palais.tagline': 'Direction artistique — Identité visuelle',
+      'calsmith.tagline': 'Graphisme — Identité visuelle',
+      'poster.tagline': 'Graphisme — Sérigraphie',
+      'fiche.year': 'Année',
+      'stoxl.type': 'Direction artistique', 'stoxl.discipline': 'Graphisme, Identité visuelle',
+      'tapage.type': 'Graphisme', 'tapage.discipline': 'Affiche, Typographie',
+      'palais.type': 'Direction artistique', 'palais.discipline': 'Identité visuelle, Photographie',
+      'calsmith.type': 'Graphisme', 'calsmith.discipline': 'Identité visuelle, Musique',
+      'poster.type': 'Graphisme', 'poster.discipline': 'Sérigraphie, Affiche',
+      'fun.btn': 'Amusement', 'fun.cta': 'Cliquez ici et amusez-vous',
+    },
+    en: {
+      'hello.1': 'A project?', 'hello.2': 'A need?', 'hello.3': "Let's talk.",
+      'form.name': 'Name', 'form.name.ph': 'Your name',
+      'form.email.ph': 'your@email.com',
+      'form.msg.ph': 'Tell me about your project…',
+      'form.send': 'Send →', 'form.confirm': 'Message sent — talk soon.',
+      'hello.social': 'Social', 'hello.freelance': 'Independent freelance',
+      'photo.voyage': 'Travel',
+      'stoxl.tagline': 'Art direction — Graphic design',
+      'tapage.tagline': 'Graphic design — Poster',
+      'palais.tagline': 'Art direction — Visual identity',
+      'calsmith.tagline': 'Graphic design — Visual identity',
+      'poster.tagline': 'Graphic design — Screen printing',
+      'fiche.year': 'Year',
+      'stoxl.type': 'Art direction', 'stoxl.discipline': 'Graphic design, Visual identity',
+      'tapage.type': 'Graphic design', 'tapage.discipline': 'Poster, Typography',
+      'palais.type': 'Art direction', 'palais.discipline': 'Visual identity, Photography',
+      'calsmith.type': 'Graphic design', 'calsmith.discipline': 'Visual identity, Music',
+      'poster.type': 'Graphic design', 'poster.discipline': 'Screen printing, Poster',
+      'fun.btn': 'Playground', 'fun.cta': 'Click here and have fun',
+    }
+  };
+
+  let siteLang = 'fr';
+
+  function setLang(lang) {
+    siteLang = lang;
+    const dict = i18n[lang];
+
+    // Textes data-i18n
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const v = dict[el.dataset.i18n];
+      if (v && !el.disabled) el.textContent = v;
+    });
+    // Placeholders
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+      const v = dict[el.dataset.i18nPh];
+      if (v) el.placeholder = v;
+    });
+    // Matière Créative data-version
+    document.querySelectorAll('.mc-v').forEach(el => {
+      el.classList.toggle('is-shown', el.dataset.version === lang);
+    });
+    document.querySelectorAll('.mc-lang-btn').forEach(b => {
+      b.classList.toggle('is-active', b.dataset.lang === lang);
+    });
+    // Bouton footer
+    document.querySelectorAll('.gf-lang-opt').forEach(s => {
+      s.classList.toggle('is-active', s.dataset.lang === lang);
+    });
+  }
+
+  // Footer FR|EN
+  const gfLangBtn = document.getElementById('gf-lang-btn');
+  if (gfLangBtn) {
+    gfLangBtn.addEventListener('click', e => {
+      const opt = e.target.closest('.gf-lang-opt');
+      if (opt && opt.dataset.lang !== siteLang) setLang(opt.dataset.lang);
+    });
+  }
+
+  // Footer "Amusement" — pastilles jaunes poussées par la souris
+  const funBtn   = document.getElementById('gf-fun-btn');
+  const funLayer = document.getElementById('fun-dots-layer');
+  let funActive  = false;
+  let funDots    = [];
+  let funMouseHandler = null;
+
+  let funDragDot = null;
+  let funDragOffX = 0, funDragOffY = 0;
+
+  function spawnFunDots() {
+    const count = window.innerWidth <= 768 ? 20 : 38;
+    const size  = window.innerWidth <= 768 ? 90 : 130;
+    const w = window.innerWidth, h = window.innerHeight;
+    funDots = [];
+    for (let i = 0; i < count; i++) {
+      const x = Math.random() * w;
+      const y = Math.random() * h;
+      const dot = document.createElement('div');
+      dot.className = 'fun-dot';
+      dot.style.width  = size + 'px';
+      dot.style.height = size + 'px';
+      dot.style.left   = x + 'px';
+      dot.style.top    = y + 'px';
+      funLayer.appendChild(dot);
+      const d = { el: dot, x, y, r: size / 2 };
+      funDots.push(d);
+      dot.addEventListener('mousedown', e => {
+        e.preventDefault();
+        funDragDot = d;
+        dot.classList.add('is-dragging');
+        funDragOffX = e.clientX - d.x;
+        funDragOffY = e.clientY - d.y;
+      });
+      requestAnimationFrame(() => dot.classList.add('is-in'));
+    }
+  }
+
+  function removeFunDots() {
+    funDots.forEach(d => {
+      d.el.classList.remove('is-in');
+      d.el.classList.add('is-out');
+      setTimeout(() => d.el.remove(), 450);
+    });
+    funDots = [];
+  }
+
+  function handleFunMouseMove(e) {
+    const w = window.innerWidth, h = window.innerHeight;
+
+    if (funDragDot) {
+      funDragDot.x = Math.max(funDragDot.r, Math.min(w - funDragDot.r, e.clientX - funDragOffX));
+      funDragDot.y = Math.max(funDragDot.r, Math.min(h - funDragDot.r, e.clientY - funDragOffY));
+      funDragDot.el.style.left = funDragDot.x + 'px';
+      funDragDot.el.style.top  = funDragDot.y + 'px';
+    }
+
+    const mx = e.clientX, my = e.clientY;
+    const pushRadius = 220;
+    funDots.forEach(d => {
+      if (d === funDragDot) return;
+      const dx = d.x - mx, dy = d.y - my;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < pushRadius && dist > 0.01) {
+        const force = (pushRadius - dist) / pushRadius;
+        const angle = Math.atan2(dy, dx);
+        d.x = Math.max(d.r, Math.min(w - d.r, d.x + Math.cos(angle) * force * 42));
+        d.y = Math.max(d.r, Math.min(h - d.r, d.y + Math.sin(angle) * force * 42));
+        d.el.style.left = d.x + 'px';
+        d.el.style.top  = d.y + 'px';
+      }
+    });
+  }
+
+  function handleFunMouseUp() {
+    if (funDragDot) {
+      funDragDot.el.classList.remove('is-dragging');
+      funDragDot = null;
+    }
+  }
+
+  const helloFunBtn = document.getElementById('hello-fun-btn');
+
+  function toggleFun() {
+    funActive = !funActive;
+    if (funBtn) {
+      funBtn.classList.toggle('is-active', funActive);
+      funBtn.setAttribute('aria-pressed', String(funActive));
+    }
+    if (helloFunBtn) helloFunBtn.classList.toggle('is-active', funActive);
+    if (funActive) {
+      spawnFunDots();
+      funMouseHandler = handleFunMouseMove;
+      document.addEventListener('mousemove', funMouseHandler);
+      document.addEventListener('mouseup', handleFunMouseUp);
+    } else {
+      funDragDot = null;
+      document.removeEventListener('mouseup', handleFunMouseUp);
+      removeFunDots();
+      if (funMouseHandler) document.removeEventListener('mousemove', funMouseHandler);
+      funMouseHandler = null;
+    }
+  }
+
+  if (funBtn) funBtn.addEventListener('click', toggleFun);
+  if (helloFunBtn) helloFunBtn.addEventListener('click', toggleFun);
+
+  // Boutons projet FR/EN — tous branchés sur setLang
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.mc-lang-btn');
+    if (btn && btn.dataset.lang && btn.dataset.lang !== siteLang) setLang(btn.dataset.lang);
   });
 
   // ── Footer global — clip-path reveal + arrondi ───────────────────────────

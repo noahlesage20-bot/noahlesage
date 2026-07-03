@@ -17,12 +17,9 @@
 
 <!-- Loader -->
 <div id="loader">
-  <div id="loader-bands">
-    <div id="loader-band-top"></div>
-    <div id="loader-band-mid"></div>
-    <div id="loader-band-bot"></div>
-  </div>
+  <div id="loader-bg"></div>
   <div id="loader-percent">0%</div>
+  <div id="loader-brand">Ringer Studio.</div>
 </div>
 
 <!-- Site -->
@@ -51,8 +48,6 @@
             <a href="#" class="gf-link" data-target="tapage">Tapage</a>
             <a href="#" class="gf-link" data-target="palais">Palais Bulles</a>
             <a href="#" class="gf-link" data-target="calsmith">Cal Smith</a>
-            <a href="#" class="gf-link" data-target="refonte">Refonte JOP</a>
-            <a href="#" class="gf-link" data-target="ringer">Ringer Projet</a>
             <a href="#" class="gf-link" data-target="poster">Poster</a>
           </div>
           <div class="gf-col">
@@ -77,16 +72,30 @@
           </a>
         </div>
       </div>
-      <div class="gf-bottom"><span>©Ringer_Studio | Noah Lesage | 2026</span></div>
+      <div class="gf-bottom">
+        <span>©Ringer_Studio | Noah Lesage | 2026</span>
+        <div class="gf-bottom-right">
+          <button class="gf-fun-btn" id="gf-fun-btn" aria-label="Amusement" aria-pressed="false">✦ <span data-i18n="fun.btn">Amusement</span></button>
+          <button class="gf-lang-btn" id="gf-lang-btn" aria-label="Changer de langue">
+            <span data-lang="fr" class="gf-lang-opt is-active">FR</span>
+            <span class="gf-lang-sep">|</span>
+            <span data-lang="en" class="gf-lang-opt">EN</span>
+          </button>
+        </div>
+      </div>
     </div>
   </footer>
+
+  <!-- Couche de pastilles "Amusement" -->
+  <div id="fun-dots-layer" aria-hidden="true"></div>
 
   <!-- ===================== HOME ===================== -->
   <section id="page-home" class="page page--scroll">
     <div class="hero">
-      <div class="hero-img-wrap">
+      <div class="hero-img-wrap" id="hero-img-wrap">
         <div class="hero-float hero-float--tl">Graphic design<br>Artistic direction</div>
-        <img src="a2.jpg" alt="Daydream — Ringer Studio" class="hero-img">
+        <img src="a2.jpg" alt="Daydream — Ringer Studio" class="hero-img" id="hero-slide-img">
+        <video id="hero-slide-video" class="hero-img hero-slide-video" muted loop playsinline></video>
         <div class="hero-float hero-float--br">Kinetic animation<br>Photography</div>
       </div>
     </div>
@@ -105,12 +114,10 @@
       <div class="proj-roulette" id="work-roulette">
         <div class="proj-roulette-track" id="work-track">
           <div class="proj-roulette-item" data-page="matiere"  data-img="mc-poster.jpg">Matière Créative</div>
-          <div class="proj-roulette-item" data-page="stoxl"    data-img="From S to XL.jpg">From S to XL</div>
+          <div class="proj-roulette-item" data-page="stoxl"    data-img="From S to XL anim.mp4" data-video="From S to XL anim.mp4">From S to XL</div>
           <div class="proj-roulette-item" data-page="tapage"   data-img="work-ringer.jpg">Tapage</div>
           <div class="proj-roulette-item" data-page="palais"   data-img="Palais bulles.jpg">Palais Bulles</div>
           <div class="proj-roulette-item" data-page="calsmith" data-img="Cal Smith.jpg">Cal Smith</div>
-          <div class="proj-roulette-item" data-page="refonte"  data-img="work-ringer.jpg">Refonte<br>JOP 2024</div>
-          <div class="proj-roulette-item" data-page="ringer"   data-img="work-ringer.jpg">Ringer Projet</div>
           <div class="proj-roulette-item" data-page="poster"   data-img="work-ringer.jpg">Poster</div>
         </div>
       </div>
@@ -125,7 +132,7 @@
   <section id="page-photo" class="page page--scroll">
     <div class="photo-list">
       <div class="photo-list-item" data-img="photo-street.jpg">
-        <span class="photo-list-name">Voyage</span>
+        <span class="photo-list-name" data-i18n="photo.voyage">Voyage</span>
       </div>
       <div class="photo-list-item" data-img="photo-street.jpg">
         <span class="photo-list-name">Street photo</span>
@@ -239,125 +246,185 @@
 
   <!-- ===================== PROJET : FROM S TO XL ===================== -->
   <section id="page-stoxl" class="page page--scroll">
-    <div class="proj-page">
-      <button class="proj-back js-back"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>work</button>
-      <div class="proj-hero"><img src="From S to XL.jpg" alt="From S to XL" class="proj-hero-img"></div>
-      <div class="proj-title-block">
-        <h2 class="proj-title">From S to XL</h2>
-        <p class="proj-meta">Direction artistique — Graphisme — 2024</p>
+    <div class="mc-proj-layout">
+      <div class="mc-proj-left">
+        <div class="mc-split-top">
+          <button class="proj-back js-back"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>work</button>
+          <div class="mc-lang"><button class="mc-lang-btn is-active" data-lang="fr">FR</button><span class="mc-lang-sep">/</span><button class="mc-lang-btn" data-lang="en">EN</button></div>
+        </div>
+        <div class="mc-split-mid">
+          <h2 class="mc-split-title">From S<br>to XL</h2>
+          <div class="mc-split-tagline"><p data-i18n="stoxl.tagline">Direction artistique — Graphisme</p></div>
+        </div>
+        <div class="mc-progress"><div class="mc-progress-fill proj-progress-fill"></div></div>
+      </div>
+      <div class="mc-proj-right">
+        <div class="mc-proj-img"><video src="From S to XL anim.mp4" autoplay muted loop playsinline></video></div>
       </div>
     </div>
-    <footer class="site-footer"><span>©Ringer Studio. 2026</span><a href="mailto:noah.lesage.pro@gmail.com">noah.lesage.pro@gmail.com</a></footer>
+    <div class="mc-fiche reveal">
+      <div class="mc-fiche-row">
+        <div class="mc-fiche-item"><span class="mc-fiche-label">Type</span><span class="mc-fiche-value" data-i18n="stoxl.type">Direction artistique</span></div>
+        <div class="mc-fiche-item"><span class="mc-fiche-label" data-i18n="fiche.year">Année</span><span class="mc-fiche-value">2024</span></div>
+        <div class="mc-fiche-item"><span class="mc-fiche-label">Discipline</span><span class="mc-fiche-value" data-i18n="stoxl.discipline">Graphisme, Identité visuelle</span></div>
+      </div>
+    </div>
   </section>
 
   <!-- ===================== PROJET : TAPAGE ===================== -->
   <section id="page-tapage" class="page page--scroll">
-    <div class="proj-page">
-      <button class="proj-back js-back"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>work</button>
-      <div class="proj-hero"><img src="work-ringer.jpg" alt="Tapage" class="proj-hero-img"></div>
-      <div class="proj-title-block">
-        <h2 class="proj-title">Tapage</h2>
-        <p class="proj-meta">Graphisme — Affiche — 2024</p>
+    <div class="mc-proj-layout">
+      <div class="mc-proj-left">
+        <div class="mc-split-top">
+          <button class="proj-back js-back"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>work</button>
+          <div class="mc-lang"><button class="mc-lang-btn is-active" data-lang="fr">FR</button><span class="mc-lang-sep">/</span><button class="mc-lang-btn" data-lang="en">EN</button></div>
+        </div>
+        <div class="mc-split-mid">
+          <h2 class="mc-split-title">Tapage</h2>
+          <div class="mc-split-tagline"><p data-i18n="tapage.tagline">Graphisme — Affiche</p></div>
+        </div>
+        <div class="mc-progress"><div class="mc-progress-fill proj-progress-fill"></div></div>
+      </div>
+      <div class="mc-proj-right">
+        <div class="mc-proj-img"><img src="work-ringer.jpg" alt="Tapage"></div>
       </div>
     </div>
-    <footer class="site-footer"><span>©Ringer Studio. 2026</span><a href="mailto:noah.lesage.pro@gmail.com">noah.lesage.pro@gmail.com</a></footer>
+    <div class="mc-fiche reveal">
+      <div class="mc-fiche-row">
+        <div class="mc-fiche-item"><span class="mc-fiche-label">Type</span><span class="mc-fiche-value" data-i18n="tapage.type">Graphisme</span></div>
+        <div class="mc-fiche-item"><span class="mc-fiche-label" data-i18n="fiche.year">Année</span><span class="mc-fiche-value">2024</span></div>
+        <div class="mc-fiche-item"><span class="mc-fiche-label">Discipline</span><span class="mc-fiche-value" data-i18n="tapage.discipline">Affiche, Typographie</span></div>
+      </div>
+    </div>
   </section>
 
   <!-- ===================== PROJET : PALAIS BULLES ===================== -->
   <section id="page-palais" class="page page--scroll">
-    <div class="proj-page">
-      <button class="proj-back js-back"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>work</button>
-      <div class="proj-hero"><img src="Palais bulles.jpg" alt="Palais Bulles" class="proj-hero-img"></div>
-      <div class="proj-title-block">
-        <h2 class="proj-title">Palais Bulles</h2>
-        <p class="proj-meta">Direction artistique — Identité visuelle — 2024</p>
+    <div class="mc-proj-layout">
+      <div class="mc-proj-left">
+        <div class="mc-split-top">
+          <button class="proj-back js-back"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>work</button>
+          <div class="mc-lang"><button class="mc-lang-btn is-active" data-lang="fr">FR</button><span class="mc-lang-sep">/</span><button class="mc-lang-btn" data-lang="en">EN</button></div>
+        </div>
+        <div class="mc-split-mid">
+          <h2 class="mc-split-title">Palais<br>Bulles</h2>
+          <div class="mc-split-tagline"><p data-i18n="palais.tagline">Direction artistique — Identité visuelle</p></div>
+        </div>
+        <div class="mc-progress"><div class="mc-progress-fill proj-progress-fill"></div></div>
+      </div>
+      <div class="mc-proj-right">
+        <div class="mc-proj-img"><img src="Palais bulles.jpg" alt="Palais Bulles"></div>
       </div>
     </div>
-    <footer class="site-footer"><span>©Ringer Studio. 2026</span><a href="mailto:noah.lesage.pro@gmail.com">noah.lesage.pro@gmail.com</a></footer>
+    <div class="mc-fiche reveal">
+      <div class="mc-fiche-row">
+        <div class="mc-fiche-item"><span class="mc-fiche-label">Type</span><span class="mc-fiche-value" data-i18n="palais.type">Direction artistique</span></div>
+        <div class="mc-fiche-item"><span class="mc-fiche-label" data-i18n="fiche.year">Année</span><span class="mc-fiche-value">2024</span></div>
+        <div class="mc-fiche-item"><span class="mc-fiche-label">Discipline</span><span class="mc-fiche-value" data-i18n="palais.discipline">Identité visuelle, Photographie</span></div>
+      </div>
+    </div>
   </section>
 
   <!-- ===================== PROJET : CAL SMITH ===================== -->
   <section id="page-calsmith" class="page page--scroll">
-    <div class="proj-page">
-      <button class="proj-back js-back"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>work</button>
-      <div class="proj-hero"><img src="Cal Smith.jpg" alt="Cal Smith" class="proj-hero-img"></div>
-      <div class="proj-title-block">
-        <h2 class="proj-title">Cal Smith</h2>
-        <p class="proj-meta">Graphisme — Identité visuelle — 2024</p>
+    <div class="mc-proj-layout">
+      <div class="mc-proj-left">
+        <div class="mc-split-top">
+          <button class="proj-back js-back"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>work</button>
+          <div class="mc-lang"><button class="mc-lang-btn is-active" data-lang="fr">FR</button><span class="mc-lang-sep">/</span><button class="mc-lang-btn" data-lang="en">EN</button></div>
+        </div>
+        <div class="mc-split-mid">
+          <h2 class="mc-split-title">Cal<br>Smith</h2>
+          <div class="mc-split-tagline"><p data-i18n="calsmith.tagline">Graphisme — Identité visuelle</p></div>
+        </div>
+        <div class="mc-progress"><div class="mc-progress-fill proj-progress-fill"></div></div>
+      </div>
+      <div class="mc-proj-right">
+        <div class="mc-proj-img"><img src="Cal Smith.jpg" alt="Cal Smith"></div>
       </div>
     </div>
-    <footer class="site-footer"><span>©Ringer Studio. 2026</span><a href="mailto:noah.lesage.pro@gmail.com">noah.lesage.pro@gmail.com</a></footer>
+    <div class="mc-fiche reveal">
+      <div class="mc-fiche-row">
+        <div class="mc-fiche-item"><span class="mc-fiche-label">Type</span><span class="mc-fiche-value" data-i18n="calsmith.type">Graphisme</span></div>
+        <div class="mc-fiche-item"><span class="mc-fiche-label" data-i18n="fiche.year">Année</span><span class="mc-fiche-value">2024</span></div>
+        <div class="mc-fiche-item"><span class="mc-fiche-label">Discipline</span><span class="mc-fiche-value" data-i18n="calsmith.discipline">Identité visuelle, Musique</span></div>
+      </div>
+    </div>
   </section>
 
   <!-- ===================== PROJET : REFONTE JOP 2024 ===================== -->
-  <section id="page-refonte" class="page page--scroll">
-    <div class="proj-page">
-      <button class="proj-back js-back"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>work</button>
-      <div class="proj-hero"><img src="work-ringer.jpg" alt="Refonte JOP 2024" class="proj-hero-img"></div>
-      <div class="proj-title-block">
-        <h2 class="proj-title">Refonte JOP 2024</h2>
-        <p class="proj-meta">Direction artistique — Identité visuelle — 2024</p>
-      </div>
-    </div>
-    <footer class="site-footer"><span>©Ringer Studio. 2026</span><a href="mailto:noah.lesage.pro@gmail.com">noah.lesage.pro@gmail.com</a></footer>
-  </section>
-
-  <!-- ===================== PROJET : RINGER ===================== -->
-  <section id="page-ringer" class="page page--scroll">
-    <div class="proj-page">
-      <button class="proj-back js-back"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>work</button>
-      <div class="proj-hero"><img src="ringer-hero.jpg" alt="Ringer Projet" class="proj-hero-img"></div>
-      <div class="proj-title-block">
-        <h2 class="proj-title">Ringer Projet</h2>
-        <p class="proj-meta">Direction artistique — Identité visuelle — 2024</p>
-      </div>
-      <div class="proj-wide"><img src="ringer-mid.jpg" alt="Ringer — moodboard" class="proj-wide-img"></div>
-      <div class="proj-duo">
-        <div class="proj-duo-img-wrap"><img src="ringer-left.jpg" alt="" class="proj-duo-img"></div>
-        <div class="proj-duo-img-wrap"><img src="ringer-right.jpg" alt="" class="proj-duo-img"></div>
-      </div>
-    </div>
-    <footer class="site-footer"><span>©Ringer Studio. 2026</span><a href="mailto:noah.lesage.pro@gmail.com">noah.lesage.pro@gmail.com</a></footer>
-  </section>
-
   <!-- ===================== PROJET : POSTER ===================== -->
   <section id="page-poster" class="page page--scroll">
-    <div class="proj-page">
-      <button class="proj-back js-back"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>work</button>
-      <div class="proj-hero"><img src="work-ringer.jpg" alt="Poster" class="proj-hero-img"></div>
-      <div class="proj-title-block">
-        <h2 class="proj-title">Poster</h2>
-        <p class="proj-meta">Graphisme — Sérigraphie — 2024</p>
+    <div class="mc-proj-layout">
+      <div class="mc-proj-left">
+        <div class="mc-split-top">
+          <button class="proj-back js-back"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>work</button>
+          <div class="mc-lang"><button class="mc-lang-btn is-active" data-lang="fr">FR</button><span class="mc-lang-sep">/</span><button class="mc-lang-btn" data-lang="en">EN</button></div>
+        </div>
+        <div class="mc-split-mid">
+          <h2 class="mc-split-title">Poster</h2>
+          <div class="mc-split-tagline"><p data-i18n="poster.tagline">Graphisme — Sérigraphie</p></div>
+        </div>
+        <div class="mc-progress"><div class="mc-progress-fill proj-progress-fill"></div></div>
+      </div>
+      <div class="mc-proj-right">
+        <div class="mc-proj-img"><img src="work-ringer.jpg" alt="Poster"></div>
       </div>
     </div>
-    <footer class="site-footer"><span>©Ringer Studio. 2026</span><a href="mailto:noah.lesage.pro@gmail.com">noah.lesage.pro@gmail.com</a></footer>
+    <div class="mc-fiche reveal">
+      <div class="mc-fiche-row">
+        <div class="mc-fiche-item"><span class="mc-fiche-label">Type</span><span class="mc-fiche-value" data-i18n="poster.type">Graphisme</span></div>
+        <div class="mc-fiche-item"><span class="mc-fiche-label" data-i18n="fiche.year">Année</span><span class="mc-fiche-value">2024</span></div>
+        <div class="mc-fiche-item"><span class="mc-fiche-label">Discipline</span><span class="mc-fiche-value" data-i18n="poster.discipline">Sérigraphie, Affiche</span></div>
+      </div>
+    </div>
   </section>
 
   <!-- ===================== SAY HELLO ===================== -->
-  <section id="page-hello" class="page page--scroll page--yellow">
-    <div class="hello-top">
-      <h2 class="hello-title">Un projet ? Un besoin ?<br>Parlons-en.</h2>
-      <div class="hello-contacts">
-        <div class="hello-col">
-          <p class="hello-col-label">CONTACT</p>
-          <a href="tel:+33600000000">+33 6 00 00 00 00</a>
-          <a href="mailto:noah.lesage.pro@gmail.com">noah.lesage.pro@gmail.com</a>
+  <section id="page-hello" class="page page--scroll">
+    <div class="hello-hero">
+      <h2 class="hello-title">
+        <span class="hello-line" data-i18n="hello.1">Un projet ?</span>
+        <span class="hello-line" data-i18n="hello.2">Un besoin ?</span>
+        <span class="hello-line" data-i18n="hello.3">Parlons-en.</span>
+      </h2>
+      <form class="hello-form" action="https://formspree.io/f/xdajqqvw" method="POST">
+        <div class="hello-form-field">
+          <label class="hello-form-label" for="hello-name" data-i18n="form.name">Nom</label>
+          <input type="text" id="hello-name" name="name" class="hello-form-input" placeholder="Votre nom" data-i18n-ph="form.name.ph" required>
         </div>
-        <div class="hello-col">
-          <p class="hello-col-label">SOCIALS</p>
-          <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer">Instagram</a>
-          <a href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer">Linkedin</a>
-          <a href="https://www.behance.net/" target="_blank" rel="noopener noreferrer">Behance</a>
+        <div class="hello-form-field">
+          <label class="hello-form-label" for="hello-email">Email</label>
+          <input type="email" id="hello-email" name="email" class="hello-form-input" placeholder="votre@email.com" required>
         </div>
+        <div class="hello-form-field">
+          <label class="hello-form-label" for="hello-message">Message</label>
+          <textarea id="hello-message" name="message" class="hello-form-textarea" placeholder="Parlez-moi de votre projet…" data-i18n-ph="form.msg.ph" required></textarea>
+        </div>
+        <button type="submit" class="hello-form-btn" data-i18n="form.send">Envoyer →</button>
+      </form>
+    </div>
+    <div class="hello-info">
+      <div class="hello-info-col">
+        <p class="hello-info-label">Contact</p>
+        <a href="mailto:noah.lesage.pro@gmail.com" class="hello-info-link">noah.lesage.pro@gmail.com</a>
+      </div>
+      <div class="hello-info-col">
+        <p class="hello-info-label" data-i18n="hello.social">Réseaux</p>
+        <a href="https://www.instagram.com/ringer_studio/" target="_blank" rel="noopener noreferrer" class="hello-info-link">@ringer_studio</a>
+        <a href="https://www.instagram.com/ringer_photo/" target="_blank" rel="noopener noreferrer" class="hello-info-link">@ringer_photo</a>
+        <a href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer" class="hello-info-link">LinkedIn</a>
+      </div>
+      <div class="hello-info-col">
+        <p class="hello-info-label">Studio</p>
+        <span class="hello-info-link">Bordeaux, France</span>
+        <span class="hello-info-link" data-i18n="hello.freelance">Freelance indépendant</span>
+      </div>
+      <div class="hello-info-col">
+        <p class="hello-info-label" data-i18n="fun.btn">Amusement</p>
+        <button type="button" class="hello-info-link hello-fun-trigger" id="hello-fun-btn" data-i18n="fun.cta">Cliquez ici et amusez-vous</button>
       </div>
     </div>
-    <div class="hello-img-wrap">
-      <img src="hello-nature.jpg" alt="" class="hello-img" aria-hidden="true">
-    </div>
-    <footer class="site-footer">
-      <span>©Ringer_Studio | Noah Lesage | 2026</span>
-      <a href="mailto:noah.lesage.pro@gmail.com">noah.lesage.pro@gmail.com</a>
-    </footer>
   </section>
 
   <!-- Image flottante hover photo -->
