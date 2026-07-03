@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const home = document.getElementById('page-home');
     home.classList.add('is-active');
     setTimeout(() => loader.classList.add('is-gone'), 480);
-    setTimeout(() => loader.remove(), 1700);
+    setTimeout(() => { orbitRunning = false; loader.remove(); }, 1700);
   }
 
   // ── Navigation ────────────────────────────────────────────────────────────
@@ -290,6 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (img.parentNode) img.parentNode.appendChild(vid);
 
     let showingVid = false;
+    let pendingChangeTimer = null;
 
     function changeMedia(item) {
       const isVideo = !!(item.dataset.video);
@@ -297,11 +298,15 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!newSrc || newSrc === currentSrc) return;
       currentSrc = newSrc;
 
+      clearTimeout(pendingChangeTimer);
+      img.classList.remove('is-fading');
+      vid.classList.remove('is-fading');
+
       const curEl = showingVid ? vid : img;
       const nxtEl = isVideo   ? vid : img;
 
       curEl.classList.add('is-fading');
-      setTimeout(() => {
+      pendingChangeTimer = setTimeout(() => {
         curEl.style.display = 'none';
         curEl.classList.remove('is-fading');
         if (isVideo) { vid.src = newSrc; vid.load(); vid.play().catch(() => {}); }
@@ -496,32 +501,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── Home — mouse parallax ─────────────────────────────────────────────────
   const homeSection = document.getElementById('page-home');
-  const heroImg     = homeSection && homeSection.querySelector('.hero-img');
 
-  if (heroImg) {
+  if (homeSection) {
     homeSection.addEventListener('mousemove', e => {
       const { width, height, left, top } = homeSection.getBoundingClientRect();
       const x = ((e.clientX - left) / width  - 0.5) * 18;
       const y = ((e.clientY - top)  / height - 0.5) * 14;
-      heroImg.style.transform = `translate(${x}px, ${y}px) scale(1.04)`;
+      const t = `translate(${x}px, ${y}px) scale(1.04)`;
+      heroSlideImg.style.transform   = t;
+      heroSlideVideo.style.transform = t;
     });
     homeSection.addEventListener('mouseleave', () => {
-      heroImg.style.transform = '';
+      heroSlideImg.style.transform   = '';
+      heroSlideVideo.style.transform = '';
     });
   }
 
-  // ── Say Hello — image parallax on scroll ──────────────────────────────────
-  const helloSection = document.getElementById('page-hello');
-  const helloImg     = helloSection && helloSection.querySelector('.hello-img');
-  const helloImgWrap = helloSection && helloSection.querySelector('.hello-img-wrap');
-
-  if (helloSection && helloImg && helloImgWrap) {
-    helloSection.addEventListener('scroll', () => {
-      const wrapTop = helloImgWrap.getBoundingClientRect().top;
-      const offset  = Math.max(-80, Math.min(20, wrapTop * 0.2));
-      helloImg.style.transform = `translateY(${offset}px)`;
-    }, { passive: true });
-  }
 
   // ── Pages projet — progress bar + scroll reveal ──────────────────────────
   projPages.forEach(pageId => {
@@ -591,7 +586,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }, 320);
         } else {
           btn.disabled = false;
-          btn.textContent = 'Réessayer →';
+          btn.textContent = i18n[siteLang]['form.retry'];
         }
       } catch {
         btn.disabled = false;
@@ -607,7 +602,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'form.name': 'Nom', 'form.name.ph': 'Votre nom',
       'form.email.ph': 'votre@email.com',
       'form.msg.ph': 'Parlez-moi de votre projet…',
-      'form.send': 'Envoyer →', 'form.confirm': 'Message envoyé — à bientôt.',
+      'form.send': 'Envoyer →', 'form.retry': 'Réessayer →', 'form.confirm': 'Message envoyé — à bientôt.',
       'hello.social': 'Réseaux', 'hello.freelance': 'Freelance indépendant',
       'photo.voyage': 'Voyage',
       'stoxl.tagline': 'Direction artistique — Graphisme',
@@ -628,7 +623,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'form.name': 'Name', 'form.name.ph': 'Your name',
       'form.email.ph': 'your@email.com',
       'form.msg.ph': 'Tell me about your project…',
-      'form.send': 'Send →', 'form.confirm': 'Message sent — talk soon.',
+      'form.send': 'Send →', 'form.retry': 'Try again →', 'form.confirm': 'Message sent — talk soon.',
       'hello.social': 'Social', 'hello.freelance': 'Independent freelance',
       'photo.voyage': 'Travel',
       'stoxl.tagline': 'Art direction — Graphic design',
