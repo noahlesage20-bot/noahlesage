@@ -921,14 +921,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── Évènement — scatter & gallery ────────────────────────────────────────
   const EVENT_PHOTOS = [
-    'Évènement/DSCF0259.jpg','Évènement/DSCF0314.jpg','Évènement/DSCF0329.jpg',
-    'Évènement/DSCF0345.jpg','Évènement/DSCF0347.jpg','Évènement/DSCF0374.jpg',
-    'Évènement/DSCF0459.jpg','Évènement/DSCF0600.jpg','Évènement/DSCF1238.jpg',
-    'Évènement/DSCF1261.jpg','Évènement/DSCF1292.jpg','Évènement/DSCF7318.jpg',
-    'Évènement/DSCF7320.jpg','Évènement/DSCF7332.jpg','Évènement/DSCF7341.jpg',
-    'Évènement/DSCF7384.jpg','Évènement/DSCF7567.jpg','Évènement/DSCF8643.jpg',
-    'Évènement/DSCF9342.jpg','Évènement/DSCF9391.jpg','Évènement/DSCF9633.jpg',
-    'Évènement/DSCF9867.jpg','Évènement/DSCF9891.jpg',
+    'evenement/DSCF0259.jpg','evenement/DSCF0314.jpg','evenement/DSCF0329.jpg',
+    'evenement/DSCF0345.jpg','evenement/DSCF0347.jpg','evenement/DSCF0374.jpg',
+    'evenement/DSCF0459.jpg','evenement/DSCF0600.jpg','evenement/DSCF1238.jpg',
+    'evenement/DSCF1261.jpg','evenement/DSCF1292.jpg','evenement/DSCF7318.jpg',
+    'evenement/DSCF7320.jpg','evenement/DSCF7332.jpg','evenement/DSCF7341.jpg',
+    'evenement/DSCF7384.jpg','evenement/DSCF7567.jpg','evenement/DSCF8643.jpg',
+    'evenement/DSCF9342.jpg','evenement/DSCF9391.jpg','evenement/DSCF9633.jpg',
+    'evenement/DSCF9867.jpg','evenement/DSCF9891.jpg',
   ];
 
   const eventItem    = document.querySelector('.photo-list-item[data-event]');
