@@ -52,9 +52,9 @@
           </div>
           <div class="gf-col">
             <p class="gf-col-head">Photo</p>
-            <a href="#" class="gf-link" data-target="photo">Voyage</a>
+            <a href="#" class="gf-link" data-target="photo" data-i18n="photo.event">Évènement</a>
             <a href="#" class="gf-link" data-target="photo">Street photo</a>
-            <a href="#" class="gf-link" data-target="photo">Portrait</a>
+            <a href="#" class="gf-link" data-target="photo" data-i18n="photo.voyage">Voyage</a>
           </div>
           <div class="gf-col">
             <p class="gf-col-head">Contact</p>
@@ -88,15 +88,26 @@
 
   <!-- Couche de pastilles "Amusement" -->
   <div id="fun-dots-layer" aria-hidden="true"></div>
+  <div id="voyage-overlay" aria-hidden="true"></div>
+  <div id="event-overlay"  aria-hidden="true"></div>
 
   <!-- ===================== HOME ===================== -->
   <section id="page-home" class="page page--scroll">
     <div class="hero">
       <div class="hero-img-wrap" id="hero-img-wrap">
-        <div class="hero-float hero-float--tl">Graphic design<br>Artistic direction</div>
+        <div class="hero-float hero-float--tl">
+          <span class="hero-float-line"></span>
+          <span class="hero-float-line"></span>
+        </div>
         <img src="a2.jpg" alt="Daydream — Ringer Studio" class="hero-img" id="hero-slide-img">
         <video id="hero-slide-video" class="hero-img hero-slide-video" muted loop playsinline></video>
-        <div class="hero-float hero-float--br">Kinetic animation<br>Photography</div>
+        <div class="hero-float hero-float--br">
+          <span class="hero-float-line"></span>
+          <span class="hero-float-line"></span>
+        </div>
+        <div class="hero-float hero-float--bl" id="hero-work-cta">
+          <span class="hero-float-line"></span>
+        </div>
       </div>
     </div>
     <footer class="site-footer">
@@ -111,6 +122,7 @@
       <div class="gallery-img-wrap">
         <img src="mc-poster.jpg" alt="" class="gallery-img" id="work-img">
       </div>
+      <div class="work-hint" id="work-scroll-hint"><span class="work-hint-line"></span></div>
       <div class="proj-roulette" id="work-roulette">
         <div class="proj-roulette-track" id="work-track">
           <div class="proj-roulette-item" data-page="matiere"  data-img="mc-poster.jpg">Matière Créative</div>
@@ -131,14 +143,14 @@
   <!-- ===================== PHOTO ===================== -->
   <section id="page-photo" class="page page--scroll">
     <div class="photo-list">
-      <div class="photo-list-item" data-img="photo-street.jpg">
-        <span class="photo-list-name" data-i18n="photo.voyage">Voyage</span>
+      <div class="photo-list-item" data-event="true">
+        <span class="photo-list-name" data-i18n="photo.event">Évènement</span>
       </div>
       <div class="photo-list-item" data-img="photo-street.jpg">
         <span class="photo-list-name">Street photo</span>
       </div>
-      <div class="photo-list-item" data-img="photo-street.jpg">
-        <span class="photo-list-name">Portrait</span>
+      <div class="photo-list-item" data-voyage="true">
+        <span class="photo-list-name" data-i18n="photo.voyage">Voyage</span>
       </div>
     </div>
   </section>

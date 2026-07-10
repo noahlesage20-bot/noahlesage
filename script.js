@@ -11,6 +11,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const pages         = document.querySelectorAll('.page');
   const cursorDot     = document.getElementById('cursor-dot');
 
+  // ── Protection des assets visuels ────────────────────────────────────────
+  document.addEventListener('contextmenu', e => {
+    const isMedia = e.target.tagName === 'IMG' || e.target.tagName === 'VIDEO';
+    const inMediaContainer = e.target.closest(
+      '.hero-img-wrap, .work-img-area, .voyage-photo, .voyage-gallery-item, ' +
+      '.voyage-lightbox, .photo-hover-wrap, #loader'
+    );
+    if (isMedia || inMediaContainer) e.preventDefault();
+  });
+
+  document.addEventListener('dragstart', e => {
+    if (e.target.tagName === 'IMG' || e.target.tagName === 'VIDEO') e.preventDefault();
+  });
+
   // ── Custom Cursor ─────────────────────────────────────────────────────────
   let mX = 0, mY = 0;
   let cursorVisible = false;
@@ -157,12 +171,83 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 60);
   }
 
+  // ── Scramble typographie hero ─────────────────────────────────────────────
+  const HERO_LINES = [
+    { selector: '.hero-float--tl .hero-float-line:nth-child(1)', key: 'hero.gd',  delay: 380  },
+    { selector: '.hero-float--tl .hero-float-line:nth-child(2)', key: 'hero.ad',  delay: 600  },
+    { selector: '.hero-float--br .hero-float-line:nth-child(1)', key: 'hero.ka',  delay: 840  },
+    { selector: '.hero-float--br .hero-float-line:nth-child(2)', key: 'hero.ph',  delay: 1040 },
+    { selector: '.hero-float--bl .hero-float-line:nth-child(1)', key: 'hero.cta', delay: 1040 },
+  ];
+  const SCRAMBLE_CHARS = 'abcdefghijklmnopqrstuvwxyz';
+
+  function scrambleLine(el, text, delay) {
+    if (!el) return;
+    el.style.opacity = '0';
+    el.textContent   = '';
+    setTimeout(() => {
+      el.style.opacity = '1';
+      let frame = 0;
+      const FPR   = 3; // frames to settle per character
+      const total = text.length * FPR + 8;
+      (function tick() {
+        let out = '';
+        for (let i = 0; i < text.length; i++) {
+          if (text[i] === ' ') { out += ' '; continue; }
+          out += frame >= (i + 1) * FPR
+            ? text[i]
+            : SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
+        }
+        el.textContent = out;
+        if (++frame < total) requestAnimationFrame(tick);
+        else el.textContent = text;
+      })();
+    }, delay);
+  }
+
+  function animateHeroFloats() {
+    const dict = i18n[siteLang];
+    HERO_LINES.forEach(({ selector, key, delay }) => {
+      const el = document.querySelector(selector);
+      if (el) scrambleLine(el, dict[key], delay);
+    });
+  }
+
+  function burstFunDots() {
+    if (!funLayer) return;
+    const isMobile = window.innerWidth <= 768;
+    const count = isMobile ? 8 : 14;
+    const size  = isMobile ? 60 : 80;
+    const w = window.innerWidth, h = window.innerHeight;
+    const tempDots = [];
+
+    for (let i = 0; i < count; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'fun-dot';
+      dot.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*(w-size)}px;top:${Math.random()*(h-size)}px;pointer-events:none`;
+      funLayer.appendChild(dot);
+      tempDots.push(dot);
+      setTimeout(() => dot.classList.add('is-in'), i * 60);
+    }
+
+    // Disparition automatique après 1.6s
+    setTimeout(() => {
+      tempDots.forEach((dot, i) => setTimeout(() => {
+        dot.classList.remove('is-in');
+        dot.classList.add('is-out');
+        setTimeout(() => dot.remove(), 430);
+      }, i * 35));
+    }, 1600);
+  }
+
   function revealSite() {
     site.classList.remove('is-hidden');
     const home = document.getElementById('page-home');
     home.classList.add('is-active');
     setTimeout(() => loader.classList.add('is-gone'), 480);
     setTimeout(() => { orbitRunning = false; loader.remove(); }, 1700);
+    setTimeout(burstFunDots,        1750); // juste après la disparition du loader
+    setTimeout(animateHeroFloats, 2100);
   }
 
   // ── Navigation ────────────────────────────────────────────────────────────
@@ -236,6 +321,12 @@ document.addEventListener('DOMContentLoaded', () => {
       current = target;
       updateNavActive(target);
 
+      if (target === 'home') setTimeout(animateHeroFloats, 120);
+      if (target === 'work') setTimeout(() => {
+        const el = document.querySelector('#work-scroll-hint .work-hint-line');
+        if (el) scrambleLine(el, 'scroll ↑ ↓', 200);
+      }, 120);
+
       requestAnimationFrame(() => {
         if (nextEl) nextEl.classList.add('anim-ready');
       });
@@ -243,8 +334,8 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         document.body.classList.remove('is-transitioning');
         transitioning = false;
-      }, 500);
-    }, 280);
+      }, 380);
+    }, 220);
   }
 
   // ── Roulette factory (shared by Work & Photo) ────────────────────────────
@@ -281,51 +372,102 @@ document.addEventListener('DOMContentLoaded', () => {
       track.style.transform = `translateY(${matrix.m42 + delta}px)`;
     }
 
-    // Élément vidéo créé dynamiquement pour les slides mp4
+    // Double buffer pour crossfade fluide img↔img + img↔vid
+    const absCSS = 'display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
+    const wrap   = img.parentNode;
+    if (wrap) wrap.style.position = 'relative';
+
+    // imgA = img d'origine (déjà dans le DOM, on le rend absolu)
+    const imgA = img;
+    imgA.style.cssText = absCSS.replace('display:none', 'display:block');
+
+    // imgB = buffer arrière pour les transitions img↔img
+    const imgB = document.createElement('img');
+    imgB.className   = 'gallery-img';
+    imgB.style.cssText = absCSS;
+    if (wrap) wrap.appendChild(imgB);
+
+    // vid = élément vidéo
     const vid = document.createElement('video');
     vid.className = 'gallery-img';
     vid.muted = true; vid.loop = true; vid.setAttribute('playsinline', '');
-    vid.style.cssText = 'display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
-    if (img.parentNode) img.parentNode.style.position = 'relative';
-    if (img.parentNode) img.parentNode.appendChild(vid);
+    vid.style.cssText = absCSS;
+    if (wrap) wrap.appendChild(vid);
 
+    let activeImg  = 'A'; // quel buffer img est visible : 'A' | 'B'
     let showingVid = false;
-    let pendingChangeTimer = null;
+    let pendingXF  = null;
 
-    function changeMedia(item) {
+    function xfade(curEl, nxtEl, dy, onDone) {
+      clearTimeout(pendingXF);
+      [imgA, imgB, vid].forEach(el => {
+        if (el !== curEl && el !== nxtEl) {
+          el.style.display = 'none'; el.classList.remove('is-fading');
+          el.style.zIndex = ''; el.style.opacity = ''; el.style.transform = '';
+        }
+      });
+      curEl.classList.remove('is-fading');
+      curEl.style.display   = 'block';
+      curEl.style.zIndex    = '1';
+      curEl.style.opacity   = '1';
+      curEl.style.transform = 'translateY(0px)';
+
+      nxtEl.classList.remove('is-fading');
+      nxtEl.style.display   = 'block';
+      nxtEl.style.zIndex    = '0';
+      nxtEl.style.opacity   = '0';
+      nxtEl.style.transform = `translateY(${dy}px)`;
+
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        nxtEl.style.opacity   = '1';
+        nxtEl.style.transform = 'translateY(0px)';
+        curEl.style.opacity   = '0';
+        curEl.style.transform = `translateY(${-dy}px)`;
+      }));
+
+      pendingXF = setTimeout(() => {
+        curEl.style.display   = 'none';
+        curEl.style.opacity   = '';
+        curEl.style.transform = '';
+        curEl.style.zIndex    = '';
+        nxtEl.style.zIndex    = '';
+        onDone && onDone();
+      }, 500);
+    }
+
+    function changeMedia(item, dir) {
       const isVideo = !!(item.dataset.video);
       const newSrc  = isVideo ? item.dataset.video : item.dataset.img;
       if (!newSrc || newSrc === currentSrc) return;
       currentSrc = newSrc;
+      const dy = (dir || 1) * 40;
 
-      clearTimeout(pendingChangeTimer);
-      img.classList.remove('is-fading');
-      vid.classList.remove('is-fading');
+      const curImg = activeImg === 'A' ? imgA : imgB;
+      const nxtImg = activeImg === 'A' ? imgB : imgA;
 
-      const curEl = showingVid ? vid : img;
-      const nxtEl = isVideo   ? vid : img;
-
-      curEl.classList.add('is-fading');
-      pendingChangeTimer = setTimeout(() => {
-        curEl.style.display = 'none';
-        curEl.classList.remove('is-fading');
-        if (isVideo) { vid.src = newSrc; vid.load(); vid.play().catch(() => {}); }
-        else         { img.src = newSrc; if (showingVid) { vid.pause(); vid.src = ''; } }
-        showingVid = isVideo;
-        nxtEl.style.display = 'block';
-        nxtEl.classList.add('is-fading');
-        requestAnimationFrame(() => requestAnimationFrame(() => nxtEl.classList.remove('is-fading')));
-      }, 420);
+      if (isVideo) {
+        vid.src = newSrc; vid.load(); vid.play().catch(() => {});
+        const curEl = showingVid ? vid : curImg;
+        if (curEl !== vid) xfade(curEl, vid, dy, () => { showingVid = true; });
+      } else {
+        nxtImg.src = newSrc;
+        const curEl = showingVid ? vid : curImg;
+        xfade(curEl, nxtImg, dy, () => {
+          if (showingVid) { vid.pause(); vid.src = ''; showingVid = false; }
+          activeImg = activeImg === 'A' ? 'B' : 'A';
+        });
+      }
     }
 
     function setActive(idx) {
       idx = Math.max(0, Math.min(items.length - 1, idx));
       if (idx === activeIdx) return;
+      const dir = idx > activeIdx ? 1 : -1;
       activeIdx = idx;
       applyStyles();
       centerTrack();
       setTimeout(centerTrack, 520);
-      changeMedia(items[idx]);
+      changeMedia(items[idx], dir);
     }
 
     // Wheel — scroll on roulette area cycles projects
@@ -421,34 +563,35 @@ document.addEventListener('DOMContentLoaded', () => {
   // Précharge les images (pas les vidéos)
   heroSlides.forEach(s => { if (!s.video) { const i = new Image(); i.src = s.src; } });
 
+  function heroEnter(el) {
+    el.style.transition = 'opacity 0.18s ease, transform 0.35s ease';
+    el.style.opacity    = '0';
+    el.style.transform  = 'scale(0.97)';
+    el.style.display    = 'block';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      el.style.opacity   = '1';
+      el.style.transform = 'scale(1)';
+    }));
+    setTimeout(() => { el.style.transition = ''; el.style.transform = ''; }, 400);
+  }
+
   function heroShowSlide(slide) {
     if (slide.video) {
-      heroSlideImg.style.opacity = '0';
-      setTimeout(() => {
-        heroSlideImg.style.display = 'none';
-        heroSlideVideo.src = slide.src;
-        heroSlideVideo.style.display = 'block';
-        heroSlideVideo.style.opacity = '0';
-        heroSlideVideo.load();
-        heroSlideVideo.play().catch(() => {});
-        requestAnimationFrame(() => requestAnimationFrame(() => { heroSlideVideo.style.opacity = '1'; }));
-        heroShowingVideo = true;
-      }, 560);
+      heroSlideImg.style.display = 'none';
+      heroSlideVideo.src = slide.src;
+      heroSlideVideo.load();
+      heroSlideVideo.play().catch(() => {});
+      heroEnter(heroSlideVideo);
+      heroShowingVideo = true;
     } else {
-      const prev = heroShowingVideo ? heroSlideVideo : heroSlideImg;
-      prev.style.opacity = '0';
-      setTimeout(() => {
-        if (heroShowingVideo) {
-          heroSlideVideo.style.display = 'none';
-          heroSlideVideo.pause();
-          heroSlideVideo.src = '';
-          heroShowingVideo = false;
-        }
-        heroSlideImg.src = slide.src;
-        heroSlideImg.style.display = 'block';
-        heroSlideImg.style.opacity = '0';
-        requestAnimationFrame(() => requestAnimationFrame(() => { heroSlideImg.style.opacity = '1'; }));
-      }, 560);
+      if (heroShowingVideo) {
+        heroSlideVideo.style.display = 'none';
+        heroSlideVideo.pause();
+        heroSlideVideo.src = '';
+        heroShowingVideo = false;
+      }
+      heroSlideImg.src = slide.src;
+      heroEnter(heroSlideImg);
     }
   }
 
@@ -461,6 +604,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const heroImgWrap = document.getElementById('hero-img-wrap');
   if (heroImgWrap) {
     heroImgWrap.addEventListener('click', () => navigateTo('work'));
+  }
+
+  const heroWorkCta = document.getElementById('hero-work-cta');
+  if (heroWorkCta) {
+    heroWorkCta.addEventListener('click', e => {
+      e.stopPropagation();
+      navigateTo('work');
+    });
   }
 
   // ── Back button (Ringer projet → Work) ───────────────────────────────────
@@ -543,6 +694,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.querySelectorAll('.photo-list-item').forEach(item => {
     item.addEventListener('mouseenter', () => {
+      if (item.dataset.voyage || item.dataset.event) return;
       if (!photoHoverWrap || !photoHoverImg) return;
       const src = item.dataset.img;
       if (photoHoverImg.getAttribute('src') !== src) photoHoverImg.src = src;
@@ -552,9 +704,460 @@ document.addEventListener('DOMContentLoaded', () => {
       );
     });
     item.addEventListener('mouseleave', () => {
+      if (item.dataset.voyage || item.dataset.event) return;
       if (photoHoverWrap) photoHoverWrap.classList.remove('is-visible');
       document.querySelectorAll('.photo-list-item').forEach(i => i.classList.remove('is-hovered'));
     });
+  });
+
+  // ── Voyage — scatter & gallery ────────────────────────────────────────────
+  const VOYAGE_PHOTOS = [
+    'Voyage/Format photo JAPAN_Plan de travail 1-21.jpg',
+    'Voyage/Format photo JAPAN_Plan de travail 1-22.jpg',
+    'Voyage/Format photo JAPAN_Plan de travail 1-23.jpg',
+    'Voyage/Format photo_JAPAN.jpg',
+    'Voyage/DSCF0929.JPG',
+    'Voyage/DSCF0931.JPG',
+    'Voyage/Format photo2_Plan de travail 1-25.jpg',
+    'Voyage/Format photo2_Plan de travail 1-26.jpg',
+  ];
+
+  const voyageItem    = document.querySelector('.photo-list-item[data-voyage]');
+  const voyageOverlay = document.getElementById('voyage-overlay');
+  // state: 'off' | 'scatter' | 'gallery' | 'lightbox'
+  let voyageState    = 'off';
+  let vClearTimer    = null;
+  let vLeaveTimer    = null;
+
+  function vSetState(s) { voyageState = s; }
+
+  function vTriggerHide() {
+    clearTimeout(vLeaveTimer);
+    vLeaveTimer = setTimeout(() => {
+      if (voyageState !== 'scatter') return;
+      document.querySelectorAll('.photo-list-item').forEach(i => i.classList.remove('is-hovered'));
+      vHideScatter(180, () => {
+        if (voyageState === 'scatter') { voyageOverlay.innerHTML = ''; vSetState('off'); }
+      });
+    }, 80);
+  }
+
+  function vScatter() {
+    if (!voyageOverlay) return;
+    clearTimeout(vClearTimer);
+    clearTimeout(vLeaveTimer);
+    voyageOverlay.innerHTML = '';
+    vSetState('scatter');
+
+    VOYAGE_PHOTOS.forEach((src, i) => {
+      const el  = document.createElement('div');
+      el.className = 'voyage-photo';
+      const img = document.createElement('img');
+      img.src = src; img.alt = '';
+      el.appendChild(img);
+
+      const vw = window.innerWidth, vh = window.innerHeight;
+      const w  = Math.min(190, Math.max(130, vw * 0.14));
+      const h  = w * 1.5;
+      const x  = 60 + Math.random() * Math.max(0, vw - w - 120);
+      const y  = 60 + Math.random() * Math.max(0, vh - h - 120);
+      const rot = (Math.random() - 0.5) * 22;
+
+      el.style.left      = x + 'px';
+      el.style.top       = y + 'px';
+      el.style.transform = `rotate(${rot}deg) scale(0.8)`;
+      el.style.opacity   = '0';
+      voyageOverlay.appendChild(el);
+
+      setTimeout(() => {
+        el.style.transform = `rotate(${rot}deg) scale(1)`;
+        el.style.opacity   = '1';
+      }, i * 22);
+    });
+  }
+
+  function vHideScatter(ms, cb) {
+    if (!voyageOverlay) return cb && cb();
+    voyageOverlay.querySelectorAll('.voyage-photo').forEach(el => {
+      el.style.transition = `opacity ${ms}ms ease, transform ${ms}ms ease`;
+      el.style.opacity    = '0';
+      el.style.transform  = el.style.transform.replace(/scale\([^)]*\)/g, 'scale(0.6)');
+    });
+    clearTimeout(vClearTimer);
+    // Ne pas toucher au innerHTML ici — le callback s'en charge
+    // (évite le flash "DOM vide" entre scatter et galerie)
+    vClearTimer = setTimeout(() => cb && cb(), ms + 20);
+  }
+
+  function vOpenGallery() {
+    if (!voyageOverlay) return;
+    clearTimeout(vClearTimer);
+    clearTimeout(vLeaveTimer);
+    vSetState('gallery');
+    voyageOverlay.innerHTML = '';
+    voyageOverlay.className = 'is-gallery';
+
+    const backdrop = document.createElement('div');
+    backdrop.className = 'voyage-gallery-backdrop';
+    backdrop.addEventListener('click', vClose);
+    voyageOverlay.appendChild(backdrop);
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'voyage-gallery-close';
+    closeBtn.textContent = '×';
+    closeBtn.addEventListener('click', vClose);
+    voyageOverlay.appendChild(closeBtn);
+
+    const grid = document.createElement('div');
+    grid.className = 'voyage-gallery-grid';
+    VOYAGE_PHOTOS.forEach((src, i) => {
+      const cell = document.createElement('div');
+      cell.className = 'voyage-gallery-item';
+      const img = document.createElement('img');
+      img.src = src; img.alt = '';
+      cell.appendChild(img);
+      cell.addEventListener('click', e => { e.stopPropagation(); vLightbox(i); });
+      grid.appendChild(cell);
+    });
+    voyageOverlay.appendChild(grid);
+    requestAnimationFrame(() => requestAnimationFrame(() =>
+      voyageOverlay.classList.add('is-visible')
+    ));
+  }
+
+  let vLbIdx = 0;
+
+  function vLbClose(lb) {
+    lb.classList.remove('is-visible');
+    setTimeout(() => { lb.remove(); vSetState('gallery'); }, 350);
+  }
+
+  function vLbNav(lb, img, dir) {
+    vLbIdx = (vLbIdx + dir + VOYAGE_PHOTOS.length) % VOYAGE_PHOTOS.length;
+    img.style.opacity = '0';
+    setTimeout(() => { img.src = VOYAGE_PHOTOS[vLbIdx]; img.style.opacity = '1'; }, 230);
+  }
+
+  function vLightbox(idx) {
+    vSetState('lightbox');
+    vLbIdx = idx;
+
+    const lb = document.createElement('div');
+    lb.className = 'voyage-lightbox';
+
+    const img = document.createElement('img');
+    img.className = 'voyage-lb-img';
+    img.src = VOYAGE_PHOTOS[idx]; img.alt = '';
+    img.addEventListener('click', () => vLbClose(lb));
+
+    const prev = document.createElement('button');
+    prev.className = 'voyage-lb-btn voyage-lb-prev';
+    prev.innerHTML = '&#8592;';
+    prev.addEventListener('click', e => { e.stopPropagation(); vLbNav(lb, img, -1); });
+
+    const next = document.createElement('button');
+    next.className = 'voyage-lb-btn voyage-lb-next';
+    next.innerHTML = '&#8594;';
+    next.addEventListener('click', e => { e.stopPropagation(); vLbNav(lb, img, 1); });
+
+    lb.append(img, prev, next);
+    // Clic sur le fond (hors image) → ferme
+    lb.addEventListener('click', e => { if (e.target === lb) vLbClose(lb); });
+    document.body.appendChild(lb);
+    requestAnimationFrame(() => requestAnimationFrame(() => lb.classList.add('is-visible')));
+  }
+
+  function vClose() {
+    if (!voyageOverlay) return;
+    clearTimeout(vClearTimer);
+    clearTimeout(vLeaveTimer);
+    const grid = voyageOverlay.querySelector('.voyage-gallery-grid');
+    if (grid) {
+      grid.style.transition = 'opacity 0.16s ease, translate 0.18s cubic-bezier(0.4,0,1,1)';
+      grid.style.opacity    = '0';
+      grid.style.translate  = '0 -14px';
+    }
+    vClearTimer = setTimeout(() => {
+      voyageOverlay.classList.remove('is-visible');
+      vClearTimer = setTimeout(() => {
+        voyageOverlay.innerHTML = '';
+        voyageOverlay.className = '';
+        vSetState('off');
+        document.querySelectorAll('.photo-list-item').forEach(i => i.classList.remove('is-hovered'));
+      }, 260);
+    }, 140);
+  }
+
+  if (voyageItem && voyageOverlay) {
+    voyageItem.addEventListener('mouseenter', () => {
+      clearTimeout(vLeaveTimer);
+      clearTimeout(vClearTimer);
+      if (eventState === 'scatter') { clearTimeout(eLeaveTimer); eHideScatter(120, () => { eventOverlay.innerHTML = ''; eSetState('off'); }); }
+      if (voyageState === 'gallery' || voyageState === 'lightbox') return;
+      if (voyageState === 'scatter') return;
+      document.querySelectorAll('.photo-list-item').forEach(i =>
+        i.classList.toggle('is-hovered', i === voyageItem)
+      );
+      vScatter();
+    });
+
+    voyageItem.addEventListener('mouseleave', () => {
+      if (voyageState === 'gallery' || voyageState === 'lightbox') return;
+      if (voyageState === 'scatter') vTriggerHide();
+    });
+
+    voyageItem.addEventListener('click', e => {
+      e.stopPropagation();
+      clearTimeout(vLeaveTimer);
+      if (voyageState === 'gallery') {
+        vClose();
+      } else if (voyageState === 'scatter') {
+        vHideScatter(150, vOpenGallery);
+      } else {
+        vOpenGallery();
+      }
+    });
+  }
+
+  // ── Évènement — scatter & gallery ────────────────────────────────────────
+  const EVENT_PHOTOS = [
+    'Évènement/DSCF0259.jpg','Évènement/DSCF0314.jpg','Évènement/DSCF0329.jpg',
+    'Évènement/DSCF0345.jpg','Évènement/DSCF0347.jpg','Évènement/DSCF0374.jpg',
+    'Évènement/DSCF0459.jpg','Évènement/DSCF0600.jpg','Évènement/DSCF1238.jpg',
+    'Évènement/DSCF1261.jpg','Évènement/DSCF1292.jpg','Évènement/DSCF7318.jpg',
+    'Évènement/DSCF7320.jpg','Évènement/DSCF7332.jpg','Évènement/DSCF7341.jpg',
+    'Évènement/DSCF7384.jpg','Évènement/DSCF7567.jpg','Évènement/DSCF8643.jpg',
+    'Évènement/DSCF9342.jpg','Évènement/DSCF9391.jpg','Évènement/DSCF9633.jpg',
+    'Évènement/DSCF9867.jpg','Évènement/DSCF9891.jpg',
+  ];
+
+  const eventItem    = document.querySelector('.photo-list-item[data-event]');
+  const eventOverlay = document.getElementById('event-overlay');
+  let eventState   = 'off';
+  let eClearTimer  = null;
+  let eLeaveTimer  = null;
+
+  function eSetState(s) { eventState = s; }
+
+  function eTriggerHide() {
+    clearTimeout(eLeaveTimer);
+    eLeaveTimer = setTimeout(() => {
+      if (eventState !== 'scatter') return;
+      document.querySelectorAll('.photo-list-item').forEach(i => i.classList.remove('is-hovered'));
+      eHideScatter(180, () => {
+        if (eventState === 'scatter') { eventOverlay.innerHTML = ''; eSetState('off'); }
+      });
+    }, 60);
+  }
+
+  function eScatter() {
+    if (!eventOverlay) return;
+    clearTimeout(eClearTimer);
+    clearTimeout(eLeaveTimer);
+    eventOverlay.innerHTML = '';
+    eSetState('scatter');
+
+    EVENT_PHOTOS.forEach((src, i) => {
+      const el  = document.createElement('div');
+      el.className = 'voyage-photo';
+      const img = document.createElement('img');
+      img.src = src; img.alt = '';
+      el.appendChild(img);
+
+      const vw = window.innerWidth, vh = window.innerHeight;
+      const w  = Math.min(190, Math.max(130, vw * 0.14));
+      const h  = w * 1.5;
+      const x  = 60 + Math.random() * Math.max(0, vw - w - 120);
+      const y  = 60 + Math.random() * Math.max(0, vh - h - 120);
+      const rot = (Math.random() - 0.5) * 22;
+
+      el.style.left      = x + 'px';
+      el.style.top       = y + 'px';
+      el.style.transform = `rotate(${rot}deg) scale(0.8)`;
+      el.style.opacity   = '0';
+      eventOverlay.appendChild(el);
+
+      setTimeout(() => {
+        el.style.transform = `rotate(${rot}deg) scale(1)`;
+        el.style.opacity   = '1';
+      }, i * 16);
+    });
+  }
+
+  function eHideScatter(ms, cb) {
+    if (!eventOverlay) return cb && cb();
+    eventOverlay.querySelectorAll('.voyage-photo').forEach(el => {
+      el.style.transition = `opacity ${ms}ms ease, transform ${ms}ms ease`;
+      el.style.opacity    = '0';
+      el.style.transform  = el.style.transform.replace(/scale\([^)]*\)/g, 'scale(0.6)');
+    });
+    clearTimeout(eClearTimer);
+    eClearTimer = setTimeout(() => cb && cb(), ms + 20);
+  }
+
+  function eOpenGallery() {
+    if (!eventOverlay) return;
+    clearTimeout(eClearTimer);
+    clearTimeout(eLeaveTimer);
+    eSetState('gallery');
+    eventOverlay.innerHTML = '';
+    eventOverlay.className = 'is-gallery';
+
+    const backdrop = document.createElement('div');
+    backdrop.className = 'voyage-gallery-backdrop';
+    backdrop.addEventListener('click', eClose);
+    eventOverlay.appendChild(backdrop);
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'voyage-gallery-close';
+    closeBtn.textContent = '×';
+    closeBtn.addEventListener('click', eClose);
+    eventOverlay.appendChild(closeBtn);
+
+    const grid = document.createElement('div');
+    grid.className = 'voyage-gallery-grid';
+    EVENT_PHOTOS.forEach((src, i) => {
+      const cell = document.createElement('div');
+      cell.className = 'voyage-gallery-item';
+      const img = document.createElement('img');
+      img.src = src; img.alt = '';
+      cell.appendChild(img);
+      cell.addEventListener('click', e => { e.stopPropagation(); eLightbox(i); });
+      grid.appendChild(cell);
+    });
+    eventOverlay.appendChild(grid);
+    requestAnimationFrame(() => requestAnimationFrame(() =>
+      eventOverlay.classList.add('is-visible')
+    ));
+  }
+
+  let eLbIdx = 0;
+
+  function eLbClose(lb) {
+    lb.classList.remove('is-visible');
+    setTimeout(() => { lb.remove(); eSetState('gallery'); }, 350);
+  }
+
+  function eLbNav(lb, img, dir) {
+    eLbIdx = (eLbIdx + dir + EVENT_PHOTOS.length) % EVENT_PHOTOS.length;
+    img.style.opacity = '0';
+    setTimeout(() => { img.src = EVENT_PHOTOS[eLbIdx]; img.style.opacity = '1'; }, 230);
+  }
+
+  function eLightbox(idx) {
+    eSetState('lightbox');
+    eLbIdx = idx;
+
+    const lb = document.createElement('div');
+    lb.className = 'voyage-lightbox';
+
+    const img = document.createElement('img');
+    img.className = 'voyage-lb-img';
+    img.src = EVENT_PHOTOS[idx]; img.alt = '';
+    img.addEventListener('click', () => eLbClose(lb));
+
+    const prev = document.createElement('button');
+    prev.className = 'voyage-lb-btn voyage-lb-prev';
+    prev.innerHTML = '&#8592;';
+    prev.addEventListener('click', e => { e.stopPropagation(); eLbNav(lb, img, -1); });
+
+    const next = document.createElement('button');
+    next.className = 'voyage-lb-btn voyage-lb-next';
+    next.innerHTML = '&#8594;';
+    next.addEventListener('click', e => { e.stopPropagation(); eLbNav(lb, img, 1); });
+
+    lb.append(img, prev, next);
+    lb.addEventListener('click', e => { if (e.target === lb) eLbClose(lb); });
+    document.body.appendChild(lb);
+    requestAnimationFrame(() => requestAnimationFrame(() => lb.classList.add('is-visible')));
+  }
+
+  function eClose() {
+    if (!eventOverlay) return;
+    clearTimeout(eClearTimer);
+    clearTimeout(eLeaveTimer);
+    const grid = eventOverlay.querySelector('.voyage-gallery-grid');
+    if (grid) {
+      grid.style.transition = 'opacity 0.16s ease, translate 0.18s cubic-bezier(0.4,0,1,1)';
+      grid.style.opacity    = '0';
+      grid.style.translate  = '0 -14px';
+    }
+    eClearTimer = setTimeout(() => {
+      eventOverlay.classList.remove('is-visible');
+      eClearTimer = setTimeout(() => {
+        eventOverlay.innerHTML = '';
+        eventOverlay.className = '';
+        eSetState('off');
+        document.querySelectorAll('.photo-list-item').forEach(i => i.classList.remove('is-hovered'));
+      }, 260);
+    }, 140);
+  }
+
+  if (eventItem && eventOverlay) {
+    eventItem.addEventListener('mouseenter', () => {
+      clearTimeout(eLeaveTimer);
+      clearTimeout(eClearTimer);
+      if (voyageState === 'scatter') { clearTimeout(vLeaveTimer); vHideScatter(120, () => { voyageOverlay.innerHTML = ''; vSetState('off'); }); }
+      if (eventState === 'gallery' || eventState === 'lightbox') return;
+      if (eventState === 'scatter') return;
+      document.querySelectorAll('.photo-list-item').forEach(i =>
+        i.classList.toggle('is-hovered', i === eventItem)
+      );
+      eScatter();
+    });
+
+    eventItem.addEventListener('mouseleave', () => {
+      if (eventState === 'gallery' || eventState === 'lightbox') return;
+      if (eventState === 'scatter') eTriggerHide();
+    });
+
+    eventItem.addEventListener('click', e => {
+      e.stopPropagation();
+      clearTimeout(eLeaveTimer);
+      if (eventState === 'gallery') {
+        eClose();
+      } else if (eventState === 'scatter') {
+        eHideScatter(150, eOpenGallery);
+      } else {
+        eOpenGallery();
+      }
+    });
+  }
+
+  document.addEventListener('keydown', e => {
+    // Voyage lightbox
+    if (voyageState === 'lightbox') {
+      const lb  = document.querySelector('.voyage-lightbox');
+      const img = lb?.querySelector('.voyage-lb-img');
+      if (!lb) return;
+      if (e.key === 'Escape')          vLbClose(lb);
+      else if (e.key === 'ArrowLeft')  vLbNav(lb, img, -1);
+      else if (e.key === 'ArrowRight') vLbNav(lb, img,  1);
+      return;
+    }
+    // Évènement lightbox
+    if (eventState === 'lightbox') {
+      const lb  = document.querySelector('.voyage-lightbox');
+      const img = lb?.querySelector('.voyage-lb-img');
+      if (!lb) return;
+      if (e.key === 'Escape')          eLbClose(lb);
+      else if (e.key === 'ArrowLeft')  eLbNav(lb, img, -1);
+      else if (e.key === 'ArrowRight') eLbNav(lb, img,  1);
+      return;
+    }
+    if (e.key !== 'Escape') return;
+    if (voyageState === 'gallery') vClose();
+    else if (voyageState === 'scatter') {
+      clearTimeout(vLeaveTimer);
+      document.querySelectorAll('.photo-list-item').forEach(i => i.classList.remove('is-hovered'));
+      vHideScatter(200, () => { voyageOverlay.innerHTML = ''; vSetState('off'); });
+    }
+    if (eventState === 'gallery') eClose();
+    else if (eventState === 'scatter') {
+      clearTimeout(eLeaveTimer);
+      document.querySelectorAll('.photo-list-item').forEach(i => i.classList.remove('is-hovered'));
+      eHideScatter(200, () => { eventOverlay.innerHTML = ''; eSetState('off'); });
+    }
   });
 
   // ── Formulaire Say Hello — soumission AJAX ───────────────────────────────
@@ -604,7 +1207,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'form.msg.ph': 'Parlez-moi de votre projet…',
       'form.send': 'Envoyer →', 'form.retry': 'Réessayer →', 'form.confirm': 'Message envoyé — à bientôt.',
       'hello.social': 'Réseaux', 'hello.freelance': 'Freelance indépendant',
-      'photo.voyage': 'Voyage',
+      'photo.voyage': 'Voyage', 'photo.event': 'Évènement',
       'stoxl.tagline': 'Direction artistique — Graphisme',
       'tapage.tagline': 'Graphisme — Affiche',
       'palais.tagline': 'Direction artistique — Identité visuelle',
@@ -617,6 +1220,9 @@ document.addEventListener('DOMContentLoaded', () => {
       'calsmith.type': 'Graphisme', 'calsmith.discipline': 'Identité visuelle, Musique',
       'poster.type': 'Graphisme', 'poster.discipline': 'Sérigraphie, Affiche',
       'fun.btn': 'Amusement', 'fun.cta': 'Cliquez ici et amusez-vous',
+      'hero.gd': 'Design graphique', 'hero.ad': 'Direction artistique',
+      'hero.ka': 'Animation cinétique', 'hero.ph': 'Photographie',
+      'hero.cta': 'Voir mon travail →',
     },
     en: {
       'hello.1': 'A project?', 'hello.2': 'A need?', 'hello.3': "Let's talk.",
@@ -625,7 +1231,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'form.msg.ph': 'Tell me about your project…',
       'form.send': 'Send →', 'form.retry': 'Try again →', 'form.confirm': 'Message sent — talk soon.',
       'hello.social': 'Social', 'hello.freelance': 'Independent freelance',
-      'photo.voyage': 'Travel',
+      'photo.voyage': 'Travel', 'photo.event': 'Event',
       'stoxl.tagline': 'Art direction — Graphic design',
       'tapage.tagline': 'Graphic design — Poster',
       'palais.tagline': 'Art direction — Visual identity',
@@ -638,6 +1244,9 @@ document.addEventListener('DOMContentLoaded', () => {
       'calsmith.type': 'Graphic design', 'calsmith.discipline': 'Visual identity, Music',
       'poster.type': 'Graphic design', 'poster.discipline': 'Screen printing, Poster',
       'fun.btn': 'Playground', 'fun.cta': 'Click here and have fun',
+      'hero.gd': 'Graphic design', 'hero.ad': 'Artistic direction',
+      'hero.ka': 'Kinetic animation', 'hero.ph': 'Photography',
+      'hero.cta': 'See my work →',
     }
   };
 
@@ -667,6 +1276,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Bouton footer
     document.querySelectorAll('.gf-lang-opt').forEach(s => {
       s.classList.toggle('is-active', s.dataset.lang === lang);
+    });
+    // Hero floats — mise à jour directe si déjà visibles
+    HERO_LINES.forEach(({ selector, key }) => {
+      const el = document.querySelector(selector);
+      if (el && el.style.opacity === '1') el.textContent = dict[key];
     });
   }
 
