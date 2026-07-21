@@ -175,6 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const HERO_LINES = [
     { selector: '.hero-float--tl .hero-float-line:nth-child(1)', key: 'hero.gd',  delay: 380  },
     { selector: '.hero-float--tl .hero-float-line:nth-child(2)', key: 'hero.ad',  delay: 600  },
+    { selector: '.hero-float--tr .hero-float-line:nth-child(1)', key: 'hero.by',  delay: 720  },
     { selector: '.hero-float--br .hero-float-line:nth-child(1)', key: 'hero.ka',  delay: 840  },
     { selector: '.hero-float--br .hero-float-line:nth-child(2)', key: 'hero.ph',  delay: 1040 },
     { selector: '.hero-float--bl .hero-float-line:nth-child(1)', key: 'hero.cta', delay: 1040 },
@@ -1221,6 +1222,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'poster.type': 'Graphisme', 'poster.discipline': 'Sérigraphie, Affiche',
       'fun.btn': 'Amusement', 'fun.cta': 'Cliquez ici et amusez-vous',
       'hero.gd': 'Design graphique', 'hero.ad': 'Direction artistique',
+      'hero.by': 'par Noah Lesage',
       'hero.ka': 'Animation cinétique', 'hero.ph': 'Photographie',
       'hero.cta': 'Voir mon travail →',
     },
@@ -1245,6 +1247,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'poster.type': 'Graphic design', 'poster.discipline': 'Screen printing, Poster',
       'fun.btn': 'Playground', 'fun.cta': 'Click here and have fun',
       'hero.gd': 'Graphic design', 'hero.ad': 'Artistic direction',
+      'hero.by': 'by Noah Lesage',
       'hero.ka': 'Kinetic animation', 'hero.ph': 'Photography',
       'hero.cta': 'See my work →',
     }
@@ -1427,7 +1430,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // GF_H = hauteur footer révélée, dynamique selon viewport
   pages.forEach(page => {
     page.addEventListener('scroll', () => {
-      const gfH = window.innerWidth <= 768 ? 520 : 320;
+      const gfH = window.innerWidth <= 768 ? 400 : 240;
       const dist = page.scrollHeight - page.scrollTop - page.clientHeight;
       const progress = Math.max(0, Math.min(1, 1 - dist / gfH));
       if (progress > 0) {

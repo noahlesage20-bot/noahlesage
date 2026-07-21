@@ -286,12 +286,12 @@ body:has(.proj-item:hover) #cursor-dot {
   overflow-x: hidden;
   overflow-y: auto;
   scroll-behavior: smooth;
-  padding-bottom: 320px;
+  padding-bottom: 240px;
 }
 
 .page::-webkit-scrollbar { width: 0; }
 
-#page-work, #page-photo, #page-home { padding-bottom: 360px; }
+#page-work, #page-photo, #page-home { padding-bottom: 260px; }
 
 .page.is-active {
   opacity: 1;
@@ -314,7 +314,7 @@ body:has(.proj-item:hover) #cursor-dot {
   z-index: 2;
   background: var(--black);
   color: var(--white);
-  padding: 5vw var(--pad) 2vw;
+  padding: 2.8vw var(--pad) 2vw;
 }
 
 .gf-inner {
@@ -549,6 +549,12 @@ body:has(.proj-item:hover) #cursor-dot {
 .hero-float--tl {
   top: 6%;
   left: 5%;
+}
+
+.hero-float--tr {
+  top: 6%;
+  right: 5%;
+  text-align: right;
 }
 
 .hero-float--br {
@@ -1464,7 +1470,7 @@ div.mc-v.is-shown   { display: block; }
   }
 
   /* Work : padding réduit — le footer est accessible mais sans y tomber en scrollant */
-  #page-work, #page-photo, #page-home { padding-bottom: 260px; }
+  #page-work, #page-photo, #page-home { padding-bottom: 240px; }
 
 
   /* ── Photo — liste typographique ─────────── */
@@ -1584,9 +1590,9 @@ div.mc-v.is-shown   { display: block; }
   .hello-info-col { min-width: 40%; }
 
   /* ── Footer ─────────────────────────────────── */
-  .page { padding-bottom: 520px; }
+  .page { padding-bottom: 400px; }
 
-  .gf { padding: 9vw var(--pad) 5vw; }
+  .gf { padding: 6vw var(--pad) 4vw; }
   .gf-inner { gap: 6vw; }
 
   .gf-top {
