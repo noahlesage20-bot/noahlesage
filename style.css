@@ -1531,7 +1531,8 @@ div.mc-v.is-shown   { display: block; }
     padding: 16px var(--pad);
     align-items: center;
   }
-  #header.is-proj { padding: 14px var(--pad); }
+  #header.is-proj,
+  #header.is-hello { padding: 14px var(--pad); }
 
   .logo { font-size: clamp(18px, 7vw, 32px); }
 
@@ -1567,6 +1568,7 @@ div.mc-v.is-shown   { display: block; }
     padding: 0;
     padding-top: var(--header-h);
     height: 100vh;
+    height: 100dvh; /* dynamic viewport — fixes iOS toolbar overlap */
     position: relative;
   }
   .gallery-img-wrap {
@@ -1597,9 +1599,12 @@ div.mc-v.is-shown   { display: block; }
     mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%);
   }
 
+  /* Masquer le hint scroll sur mobile (overlap roulette + mix-blend-mode cassé) */
+  .work-hint { display: none; }
+
   /* Texte roulette blanc sur image assombrie */
   .proj-roulette-item {
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.55);
     font-size: clamp(11px, 3.5vw, 14px);
     padding: 3px 0;
   }
@@ -1718,7 +1723,7 @@ div.mc-v.is-shown   { display: block; }
     grid-template-columns: 1fr;
     align-items: start;
     gap: 8vw;
-    padding-top: calc(var(--header-h) + 4vw);
+    padding-top: calc(var(--header-h) + 8vw);
     min-height: auto;
     padding-bottom: 8vw;
   }
