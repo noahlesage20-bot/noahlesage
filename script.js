@@ -174,16 +174,24 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function revealSite() {
-    site.classList.remove('is-hidden');
+    // Suppression du loader en priorité absolue — rien ne doit bloquer ça
+    setTimeout(() => { if (loader) loader.classList.add('is-gone'); }, 480);
+    setTimeout(() => { orbitRunning = false; if (loader) loader.remove(); }, 1700);
+
+    // Réveil du site
+    if (site) site.classList.remove('is-hidden');
     const workPage = document.getElementById('page-work');
     if (workPage) {
       workPage.classList.add('is-active');
       requestAnimationFrame(() => requestAnimationFrame(() => workPage.classList.add('anim-ready')));
     }
-    current = 'work';
-    updateNavActive('work');
-    setTimeout(() => loader.classList.add('is-gone'), 480);
-    setTimeout(() => { orbitRunning = false; loader.remove(); }, 1700);
+
+    // État navigation (isolé pour ne pas bloquer le reste)
+    try {
+      current = 'work';
+      updateNavActive('work');
+    } catch (e) {}
+
     setTimeout(burstFunDots, 1750);
     setTimeout(() => {
       const el = document.querySelector('#work-scroll-hint .work-hint-line');
