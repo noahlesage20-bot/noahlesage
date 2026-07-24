@@ -286,12 +286,12 @@ body:has(.proj-item:hover) #cursor-dot {
   overflow-x: hidden;
   overflow-y: auto;
   scroll-behavior: smooth;
-  padding-bottom: 240px;
+  padding-bottom: 300px;
 }
 
 .page::-webkit-scrollbar { width: 0; }
 
-#page-work, #page-photo, #page-home { padding-bottom: 260px; }
+#page-work, #page-photo, #page-home { padding-bottom: 300px; }
 
 .page.is-active {
   opacity: 1;
@@ -633,6 +633,145 @@ body:has(.proj-item:hover) #cursor-dot {
 
 .gallery-img-wrap:hover .gallery-img:not(.is-fading) {
   transform: scale(1.025);
+}
+
+/* ==========================================
+   11d. Photo — sous-pages galeries
+========================================== */
+
+.pg-photo-sub { background: var(--white); }
+
+.pg-sub-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2vw;
+  padding: calc(var(--header-h) + 5vw) var(--pad) clamp(40px, 8vw, 100px);
+}
+
+.pg-sub-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-family: inherit;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--black);
+  opacity: 0.35;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  transition: opacity 0.25s ease;
+  white-space: nowrap;
+}
+.pg-sub-back:hover { opacity: 1; }
+
+.pg-sub-title {
+  font-size: clamp(52px, 9vw, 130px);
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  line-height: 0.92;
+}
+
+.pg-sub-count {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.3;
+  align-self: flex-end;
+  padding-bottom: 0.18em;
+  flex-shrink: 0;
+}
+
+/* Évènement — masonry 2 colonnes */
+.pg-event-grid {
+  columns: 2;
+  column-gap: clamp(6px, 1.2vw, 18px);
+  padding: 0 var(--pad) 12vw;
+}
+
+.pg-event-item {
+  break-inside: avoid;
+  margin-bottom: clamp(6px, 1.2vw, 18px);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.pg-event-item img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.pg-event-item:hover img { transform: scale(1.04); }
+
+/* Street — éditorial */
+.pg-street-body {
+  padding: 0 var(--pad) 12vw;
+  display: flex;
+  justify-content: center;
+}
+
+.pg-street-img {
+  width: 100%;
+  max-width: 900px;
+  overflow: hidden;
+}
+
+.pg-street-img img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.pg-street-img:hover img { transform: scale(1.02); }
+
+/* Voyage — masonry 2 colonnes */
+.pg-voyage-grid {
+  columns: 2;
+  column-gap: clamp(6px, 1.2vw, 18px);
+  padding: 0 var(--pad) 12vw;
+}
+
+.pg-voyage-item {
+  break-inside: avoid;
+  margin-bottom: clamp(6px, 1.2vw, 18px);
+  overflow: hidden;
+  cursor: pointer;
+}
+.pg-voyage-item img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.pg-voyage-item:hover img { transform: scale(1.03); }
+
+@media (max-width: 768px) {
+  .pg-event-grid  { columns: 1; }
+  .pg-voyage-grid { columns: 1; }
+
+  .pg-sub-header {
+    padding: calc(var(--header-h) + 8vw) var(--pad) 32px;
+    gap: 14px;
+  }
+  .pg-sub-title { font-size: clamp(36px, 10vw, 56px); }
+  .pg-sub-back  { font-size: 10px; }
+
+  .pg-event-grid,
+  .pg-voyage-grid {
+    padding: 0 var(--pad) 16vw;
+    column-gap: clamp(6px, 3vw, 12px);
+  }
+  .pg-event-item  { margin-bottom: clamp(6px, 3vw, 12px); }
+  .pg-voyage-item { margin-bottom: clamp(6px, 3vw, 12px); }
 }
 
 .proj-list {
@@ -1470,7 +1609,7 @@ div.mc-v.is-shown   { display: block; }
   }
 
   /* Work : padding réduit — le footer est accessible mais sans y tomber en scrollant */
-  #page-work, #page-photo, #page-home { padding-bottom: 240px; }
+  #page-work, #page-photo, #page-home { padding-bottom: 280px; }
 
 
   /* ── Photo — liste typographique ─────────── */
@@ -1590,9 +1729,9 @@ div.mc-v.is-shown   { display: block; }
   .hello-info-col { min-width: 40%; }
 
   /* ── Footer ─────────────────────────────────── */
-  .page { padding-bottom: 400px; }
+  .page { padding-bottom: 460px; }
 
-  .gf { padding: 6vw var(--pad) 4vw; }
+  .gf { padding: 7vw var(--pad) 4vw; }
   .gf-inner { gap: 6vw; }
 
   .gf-top {
@@ -1629,7 +1768,8 @@ div.mc-v.is-shown   { display: block; }
    Voyage — scatter & gallery
 ========================================== */
 #voyage-overlay,
-#event-overlay {
+#event-overlay,
+#street-overlay {
   position: fixed;
   inset: 0;
   z-index: 8500;

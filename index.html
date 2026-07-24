@@ -27,7 +27,7 @@
 
   <!-- Header -->
   <header id="header" role="banner">
-    <a href="#" class="logo js-nav" data-target="home" aria-label="Ringer Studio — Accueil">Ringer Studio.</a>
+    <a href="#" class="logo js-nav" data-target="work" aria-label="Ringer Studio — Work">Ringer Studio.</a>
     <nav id="main-nav" aria-label="Navigation principale">
       <a href="#" class="js-nav" data-target="work" aria-label="Work — Portfolio">work</a>
       <a href="#" class="js-nav" data-target="photo" aria-label="Photo — Photographie">photo</a>
@@ -89,36 +89,9 @@
 
   <!-- Couche de pastilles "Amusement" -->
   <div id="fun-dots-layer" aria-hidden="true"></div>
-  <div id="voyage-overlay" aria-hidden="true"></div>
-  <div id="event-overlay"  aria-hidden="true"></div>
-
-  <!-- ===================== HOME ===================== -->
-  <section id="page-home" class="page page--scroll">
-    <div class="hero">
-      <div class="hero-img-wrap" id="hero-img-wrap">
-        <div class="hero-float hero-float--tl">
-          <span class="hero-float-line"></span>
-          <span class="hero-float-line"></span>
-        </div>
-        <div class="hero-float hero-float--tr">
-          <span class="hero-float-line"></span>
-        </div>
-        <img src="a2.jpg" alt="Daydream — Ringer Studio" class="hero-img" id="hero-slide-img">
-        <video id="hero-slide-video" class="hero-img hero-slide-video" muted loop playsinline></video>
-        <div class="hero-float hero-float--br">
-          <span class="hero-float-line"></span>
-          <span class="hero-float-line"></span>
-        </div>
-        <div class="hero-float hero-float--bl" id="hero-work-cta">
-          <span class="hero-float-line"></span>
-        </div>
-      </div>
-    </div>
-    <footer class="site-footer">
-      <span>©Ringer_Studio | Noah Lesage | 2026</span>
-      <a href="mailto:noah.lesage.pro@gmail.com">noah.lesage.pro@gmail.com</a>
-    </footer>
-  </section>
+  <div id="voyage-overlay"  aria-hidden="true"></div>
+  <div id="event-overlay"   aria-hidden="true"></div>
+  <div id="street-overlay"  aria-hidden="true"></div>
 
   <!-- ===================== WORK ===================== -->
   <section id="page-work" class="page page--scroll">
@@ -150,12 +123,105 @@
       <div class="photo-list-item" data-event="true">
         <span class="photo-list-name" data-i18n="photo.event">Évènement</span>
       </div>
-      <div class="photo-list-item" data-img="photo-street.jpg">
+      <div class="photo-list-item" data-street="true">
         <span class="photo-list-name">Street photo</span>
       </div>
       <div class="photo-list-item" data-voyage="true">
         <span class="photo-list-name" data-i18n="photo.voyage">Voyage</span>
       </div>
+    </div>
+  </section>
+
+  <!-- ===================== PHOTO — ÉVÈNEMENT ===================== -->
+  <section id="page-photo-event" class="page page--scroll pg-photo-sub">
+    <div class="pg-sub-header">
+      <button class="pg-sub-back js-back-photo">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        photo
+      </button>
+      <h2 class="pg-sub-title">Évènement</h2>
+    </div>
+    <div class="pg-event-grid">
+      <div class="pg-event-item reveal"><img src="evenement/DSCF0259.jpg" alt=""></div>
+      <div class="pg-event-item reveal"><img src="evenement/DSCF0314.jpg" alt=""></div>
+      <div class="pg-event-item reveal"><img src="evenement/DSCF0329.jpg" alt=""></div>
+      <div class="pg-event-item reveal"><img src="evenement/DSCF0345.jpg" alt=""></div>
+      <div class="pg-event-item reveal"><img src="evenement/DSCF0347.jpg" alt=""></div>
+      <div class="pg-event-item reveal"><img src="evenement/DSCF0374.jpg" alt=""></div>
+      <div class="pg-event-item reveal"><img src="evenement/DSCF0459.jpg" alt=""></div>
+      <div class="pg-event-item reveal"><img src="evenement/DSCF0600.jpg" alt=""></div>
+      <div class="pg-event-item reveal"><img src="evenement/DSCF1238.jpg" alt=""></div>
+      <div class="pg-event-item reveal"><img src="evenement/DSCF1261.jpg" alt=""></div>
+      <div class="pg-event-item reveal"><img src="evenement/DSCF1292.jpg" alt=""></div>
+      <div class="pg-event-item reveal"><img src="evenement/DSCF7318.jpg" alt=""></div>
+      <div class="pg-event-item reveal"><img src="evenement/DSCF7320.jpg" alt=""></div>
+      <div class="pg-event-item reveal"><img src="evenement/DSCF7332.jpg" alt=""></div>
+      <div class="pg-event-item reveal"><img src="evenement/DSCF7341.jpg" alt=""></div>
+      <div class="pg-event-item reveal"><img src="evenement/DSCF7384.jpg" alt=""></div>
+      <div class="pg-event-item reveal"><img src="evenement/DSCF7567.jpg" alt=""></div>
+      <div class="pg-event-item reveal"><img src="evenement/DSCF8643.jpg" alt=""></div>
+      <div class="pg-event-item reveal"><img src="evenement/DSCF9342.jpg" alt=""></div>
+      <div class="pg-event-item reveal"><img src="evenement/DSCF9391.jpg" alt=""></div>
+      <div class="pg-event-item reveal"><img src="evenement/DSCF9633.jpg" alt=""></div>
+      <div class="pg-event-item reveal"><img src="evenement/DSCF9867.jpg" alt=""></div>
+      <div class="pg-event-item reveal"><img src="evenement/DSCF9891.jpg" alt=""></div>
+    </div>
+  </section>
+
+  <!-- ===================== PHOTO — STREET ===================== -->
+  <section id="page-photo-street" class="page page--scroll pg-photo-sub">
+    <div class="pg-sub-header">
+      <button class="pg-sub-back js-back-photo">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        photo
+      </button>
+      <h2 class="pg-sub-title">Street</h2>
+    </div>
+    <div class="pg-event-grid">
+      <div class="pg-event-item reveal"><img src="street photo/A009615-R1-00-1.JPG" alt=""></div>
+      <div class="pg-event-item reveal"><img src="street photo/DSCF6233.JPG" alt=""></div>
+      <div class="pg-event-item reveal"><img src="street photo/A009615-R1-12-13.JPG" alt=""></div>
+      <div class="pg-event-item reveal"><img src="street photo/DSCF6312.JPG" alt=""></div>
+      <div class="pg-event-item reveal"><img src="street photo/DSCF6313.JPG" alt=""></div>
+      <div class="pg-event-item reveal"><img src="street photo/A009615-R1-16-17.JPG" alt=""></div>
+      <div class="pg-event-item reveal"><img src="street photo/DSCF6362.JPG" alt=""></div>
+      <div class="pg-event-item reveal"><img src="street photo/DSCF6366.JPG" alt=""></div>
+      <div class="pg-event-item reveal"><img src="street photo/DSCF6378.JPG" alt=""></div>
+      <div class="pg-event-item reveal"><img src="street photo/DSCF6379.JPG" alt=""></div>
+      <div class="pg-event-item reveal"><img src="street photo/DSCF6384.JPG" alt=""></div>
+      <div class="pg-event-item reveal"><img src="street photo/DSCF6392.JPG" alt=""></div>
+      <div class="pg-event-item reveal"><img src="street photo/DSCF6393.JPG" alt=""></div>
+    </div>
+  </section>
+
+  <!-- ===================== PHOTO — VOYAGE ===================== -->
+  <section id="page-photo-voyage" class="page page--scroll pg-photo-sub">
+    <div class="pg-sub-header">
+      <button class="pg-sub-back js-back-photo">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        photo
+      </button>
+      <h2 class="pg-sub-title">Voyage</h2>
+    </div>
+    <div class="pg-voyage-grid">
+      <div class="pg-voyage-item reveal"><img src="Voyage/DSCF0929.JPG" alt=""></div>
+      <div class="pg-voyage-item reveal"><img src="Voyage/DSCF0931.JPG" alt=""></div>
+      <div class="pg-voyage-item reveal"><img src="Voyage/DSCF0932.JPG" alt=""></div>
+      <div class="pg-voyage-item reveal"><img src="Voyage/DSCF0949.JPG" alt=""></div>
+      <div class="pg-voyage-item reveal"><img src="Voyage/DSCF0953.JPG" alt=""></div>
+      <div class="pg-voyage-item reveal"><img src="Voyage/DSCF0987.JPG" alt=""></div>
+      <div class="pg-voyage-item reveal"><img src="Voyage/DSCF4796.JPG" alt=""></div>
+      <div class="pg-voyage-item reveal"><img src="Voyage/DSCF4861.JPG" alt=""></div>
+      <div class="pg-voyage-item reveal"><img src="Voyage/DSCF5823.JPG" alt=""></div>
+      <div class="pg-voyage-item reveal"><img src="Voyage/DSCF5846.JPG" alt=""></div>
+      <div class="pg-voyage-item reveal"><img src="Voyage/DSCF5882.JPG" alt=""></div>
+      <div class="pg-voyage-item reveal"><img src="Voyage/DSCF5883.JPG" alt=""></div>
+      <div class="pg-voyage-item reveal"><img src="Voyage/DSCF5886.JPG" alt=""></div>
+      <div class="pg-voyage-item reveal"><img src="Voyage/DSCF5887.JPG" alt=""></div>
+      <div class="pg-voyage-item reveal"><img src="Voyage/DSCF5892.JPG" alt=""></div>
+      <div class="pg-voyage-item reveal"><img src="Voyage/DSCF5898.JPG" alt=""></div>
+      <div class="pg-voyage-item reveal"><img src="Voyage/DSCF5902.JPG" alt=""></div>
+      <div class="pg-voyage-item reveal"><img src="Voyage/DSCF8271.JPG" alt=""></div>
     </div>
   </section>
 

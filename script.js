@@ -105,81 +105,21 @@ document.addEventListener('DOMContentLoaded', () => {
   // % counter (orbit already running, just update text)
   const step = () => {
     if (done) return;
-    progress += Math.floor(Math.random() * 3) + 1;
+    progress += Math.floor(Math.random() * 4) + 2;
     if (progress >= 100) {
       progress = 100;
       done = true;
       loaderPct.textContent = '100%';
       loaderBrand.classList.add('is-visible');
-      setTimeout(flyToHero, 550);
+      setTimeout(revealSite, 420);
       return;
     }
     loaderPct.textContent = progress + '%';
-    setTimeout(step, 30 + Math.random() * 25);
+    setTimeout(step, 16 + Math.random() * 14);
   };
   setTimeout(step, 120);
 
-  function flyToHero() {
-    // Position actuelle de a2.jpg avant d'arrêter l'orbite
-    const a2A  = ((4 / O_N) * 360 + orbitAngle) * Math.PI / 180;
-    const a2CX = O_CX + Math.cos(a2A) * O_R;
-    const a2CY = O_CY + Math.sin(a2A) * O_R;
-
-    // L'orbite continue de tourner pendant que le loader remonte — rien ne s'arrête
-
-    // flyDiv : position:fixed, survit au slide-up du loader
-    const flyDiv = document.createElement('div');
-    flyDiv.style.cssText = `
-      position:fixed;z-index:8000;pointer-events:none;overflow:hidden;
-      border-radius:4px;
-      left:${a2CX - O_W / 2}px;top:${a2CY - O_H / 2}px;
-      width:${O_W}px;height:${O_H}px;
-      transform:rotate(${O_TILTS[4]}deg);
-    `;
-    const flyImg = document.createElement('img');
-    flyImg.src = 'a2.jpg';
-    flyImg.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
-    flyDiv.appendChild(flyImg);
-    document.body.appendChild(flyDiv);
-
-    // Révèle le site → tout le loader (images + brand) remonte en bloc
-    revealSite();
-
-    setTimeout(() => {
-      const heroWrap = document.querySelector('#page-home .hero-img-wrap');
-      const heroRect = heroWrap.getBoundingClientRect();
-
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          const d = '0.95s cubic-bezier(0.76,0,0.24,1)';
-          flyDiv.style.transition   = `left ${d},top ${d},width ${d},height ${d},border-radius ${d},transform ${d}`;
-          flyDiv.style.left         = heroRect.left   + 'px';
-          flyDiv.style.top          = heroRect.top    + 'px';
-          flyDiv.style.width        = heroRect.width  + 'px';
-          flyDiv.style.height       = heroRect.height + 'px';
-          flyDiv.style.borderRadius = '0';
-          flyDiv.style.transform    = '';
-
-          setTimeout(() => {
-            flyDiv.style.transition = 'opacity 0.55s ease';
-            flyDiv.style.opacity    = '0';
-            document.getElementById('page-home').classList.add('anim-ready');
-            setTimeout(() => flyDiv.remove(), 650);
-          }, 980);
-        });
-      });
-    }, 60);
-  }
-
-  // ── Scramble typographie hero ─────────────────────────────────────────────
-  const HERO_LINES = [
-    { selector: '.hero-float--tl .hero-float-line:nth-child(1)', key: 'hero.gd',  delay: 380  },
-    { selector: '.hero-float--tl .hero-float-line:nth-child(2)', key: 'hero.ad',  delay: 600  },
-    { selector: '.hero-float--tr .hero-float-line:nth-child(1)', key: 'hero.by',  delay: 720  },
-    { selector: '.hero-float--br .hero-float-line:nth-child(1)', key: 'hero.ka',  delay: 840  },
-    { selector: '.hero-float--br .hero-float-line:nth-child(2)', key: 'hero.ph',  delay: 1040 },
-    { selector: '.hero-float--bl .hero-float-line:nth-child(1)', key: 'hero.cta', delay: 1040 },
-  ];
+  // ── Scramble typographie ──────────────────────────────────────────────────
   const SCRAMBLE_CHARS = 'abcdefghijklmnopqrstuvwxyz';
 
   function scrambleLine(el, text, delay) {
@@ -204,14 +144,6 @@ document.addEventListener('DOMContentLoaded', () => {
         else el.textContent = text;
       })();
     }, delay);
-  }
-
-  function animateHeroFloats() {
-    const dict = i18n[siteLang];
-    HERO_LINES.forEach(({ selector, key, delay }) => {
-      const el = document.querySelector(selector);
-      if (el) scrambleLine(el, dict[key], delay);
-    });
   }
 
   function burstFunDots() {
@@ -243,16 +175,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function revealSite() {
     site.classList.remove('is-hidden');
-    const home = document.getElementById('page-home');
-    home.classList.add('is-active');
+    const workPage = document.getElementById('page-work');
+    if (workPage) {
+      workPage.classList.add('is-active');
+      requestAnimationFrame(() => requestAnimationFrame(() => workPage.classList.add('anim-ready')));
+    }
+    current = 'work';
+    updateNavActive('work');
     setTimeout(() => loader.classList.add('is-gone'), 480);
     setTimeout(() => { orbitRunning = false; loader.remove(); }, 1700);
-    setTimeout(burstFunDots,        1750); // juste après la disparition du loader
-    setTimeout(animateHeroFloats, 2100);
+    setTimeout(burstFunDots, 1750);
+    setTimeout(() => {
+      const el = document.querySelector('#work-scroll-hint .work-hint-line');
+      if (el) scrambleLine(el, 'scroll ↑ ↓', 200);
+    }, 700);
   }
 
   // ── Navigation ────────────────────────────────────────────────────────────
-  let current = 'home';
+  let current = 'work';
   let transitioning = false;
 
   navLinks.forEach(link => {
@@ -264,24 +204,29 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  const projPages  = new Set(['matiere','stoxl','tapage','palais','calsmith','poster']);
-  const siteHeader = document.getElementById('header');
+  const projPages     = new Set(['matiere','stoxl','tapage','palais','calsmith','poster']);
+  const photoSubPages = new Set(['photo-event','photo-street','photo-voyage']);
+  const siteHeader    = document.getElementById('header');
   const pageTitles = {
     home: 'Ringer Studio.', work: 'Work — Ringer Studio.', photo: 'Photo — Ringer Studio.',
     hello: 'Contact — Ringer Studio.', matiere: 'Matière Créative — Ringer Studio.',
     stoxl: 'From S to XL — Ringer Studio.', tapage: 'Tapage — Ringer Studio.',
     palais: 'Palais Bulles — Ringer Studio.', calsmith: 'Cal Smith — Ringer Studio.',
     poster: 'Poster — Ringer Studio.',
+    'photo-event': 'Évènement — Ringer Studio.',
+    'photo-street': 'Street — Ringer Studio.',
+    'photo-voyage': 'Voyage — Ringer Studio.',
   };
 
   function updateNavActive(target) {
-    const workPages = ['work','matiere','stoxl','tapage','palais','calsmith','poster'];
-    const mainTarget = workPages.includes(target) ? 'work' : target;
+    const workPages  = ['work','matiere','stoxl','tapage','palais','calsmith','poster'];
+    const photoPages = ['photo','photo-event','photo-street','photo-voyage'];
+    const mainTarget = workPages.includes(target) ? 'work'
+                     : photoPages.includes(target) ? 'photo'
+                     : target;
     navLinks.forEach(l => l.classList.toggle('is-active', l.dataset.target === mainTarget));
     if (pageTitles[target]) document.title = pageTitles[target];
   }
-
-  updateNavActive('home');
 
   const globalFooter = document.getElementById('global-footer');
 
@@ -307,6 +252,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }, 80);
     }
+    // Reveal initial pour les sous-pages photo
+    if (photoSubPages.has(target)) {
+      setTimeout(() => {
+        if (!next) return;
+        next.querySelectorAll('.reveal:not(.is-visible)').forEach(el => {
+          if (el.getBoundingClientRect().top < window.innerHeight + 80) el.classList.add('is-visible');
+        });
+      }, 80);
+    }
     return next;
   }
 
@@ -322,7 +276,6 @@ document.addEventListener('DOMContentLoaded', () => {
       current = target;
       updateNavActive(target);
 
-      if (target === 'home') setTimeout(animateHeroFloats, 120);
       if (target === 'work') setTimeout(() => {
         const el = document.querySelector('#work-scroll-hint .work-hint-line');
         if (el) scrambleLine(el, 'scroll ↑ ↓', 200);
@@ -548,79 +501,31 @@ document.addEventListener('DOMContentLoaded', () => {
   initRoulette('work-roulette',  'work-track',  'work-img',  0);
   initRoulette('photo-roulette', 'photo-track', 'photo-img', 0);
 
-  // ── Hero slideshow + hover work ──────────────────────────────────────────
-  const heroSlideImg   = document.getElementById('hero-slide-img');
-  const heroSlideVideo = document.getElementById('hero-slide-video');
-  const heroSlides = [
-    { src: 'mc-poster.jpg' },
-    { src: 'From S to XL anim.mp4', video: true },
-    { src: 'Palais bulles.jpg' },
-    { src: 'Cal Smith.jpg' },
-    { src: 'a2.jpg' },
-  ];
-  let heroSlideIdx = 0;
-  let heroShowingVideo = false;
-
-  // Précharge les images (pas les vidéos)
-  heroSlides.forEach(s => { if (!s.video) { const i = new Image(); i.src = s.src; } });
-
-  function heroEnter(el) {
-    el.style.transition = 'opacity 0.18s ease, transform 0.35s ease';
-    el.style.opacity    = '0';
-    el.style.transform  = 'scale(0.97)';
-    el.style.display    = 'block';
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      el.style.opacity   = '1';
-      el.style.transform = 'scale(1)';
-    }));
-    setTimeout(() => { el.style.transition = ''; el.style.transform = ''; }, 400);
-  }
-
-  function heroShowSlide(slide) {
-    if (slide.video) {
-      heroSlideImg.style.display = 'none';
-      heroSlideVideo.src = slide.src;
-      heroSlideVideo.load();
-      heroSlideVideo.play().catch(() => {});
-      heroEnter(heroSlideVideo);
-      heroShowingVideo = true;
-    } else {
-      if (heroShowingVideo) {
-        heroSlideVideo.style.display = 'none';
-        heroSlideVideo.pause();
-        heroSlideVideo.src = '';
-        heroShowingVideo = false;
-      }
-      heroSlideImg.src = slide.src;
-      heroEnter(heroSlideImg);
-    }
-  }
-
-  setInterval(() => {
-    if (!document.getElementById('page-home').classList.contains('is-active')) return;
-    heroSlideIdx = (heroSlideIdx + 1) % heroSlides.length;
-    heroShowSlide(heroSlides[heroSlideIdx]);
-  }, 3800);
-
-  const heroImgWrap = document.getElementById('hero-img-wrap');
-  if (heroImgWrap) {
-    heroImgWrap.addEventListener('click', () => navigateTo('work'));
-  }
-
-  const heroWorkCta = document.getElementById('hero-work-cta');
-  if (heroWorkCta) {
-    heroWorkCta.addEventListener('click', e => {
-      e.stopPropagation();
-      navigateTo('work');
-    });
-  }
-
   // ── Back button (Ringer projet → Work) ───────────────────────────────────
   document.querySelectorAll('.js-back').forEach(btn => {
     btn.addEventListener('click', () => {
       if (transitioning) return;
       navigateTo('work');
     });
+  });
+
+  // ── Back button (photo sous-page → Photo) ────────────────────────────────
+  document.querySelectorAll('.js-back-photo').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (transitioning) return;
+      navigateTo('photo');
+    });
+  });
+
+  // ── Scroll reveal pour les sous-pages photo ───────────────────────────────
+  photoSubPages.forEach(id => {
+    const pg = document.getElementById('page-' + id);
+    if (!pg) return;
+    pg.addEventListener('scroll', () => {
+      pg.querySelectorAll('.reveal:not(.is-visible)').forEach(el => {
+        if (el.getBoundingClientRect().top < window.innerHeight + 50) el.classList.add('is-visible');
+      });
+    }, { passive: true });
   });
 
   // État initial MC (data-version fr)
@@ -651,25 +556,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { passive: true });
   }
 
-  // ── Home — mouse parallax ─────────────────────────────────────────────────
-  const homeSection = document.getElementById('page-home');
-
-  if (homeSection) {
-    homeSection.addEventListener('mousemove', e => {
-      const { width, height, left, top } = homeSection.getBoundingClientRect();
-      const x = ((e.clientX - left) / width  - 0.5) * 18;
-      const y = ((e.clientY - top)  / height - 0.5) * 14;
-      const t = `translate(${x}px, ${y}px) scale(1.04)`;
-      heroSlideImg.style.transform   = t;
-      heroSlideVideo.style.transform = t;
-    });
-    homeSection.addEventListener('mouseleave', () => {
-      heroSlideImg.style.transform   = '';
-      heroSlideVideo.style.transform = '';
-    });
-  }
-
-
   // ── Pages projet — progress bar + scroll reveal ──────────────────────────
   projPages.forEach(pageId => {
     if (pageId === 'matiere') return; // géré séparément
@@ -695,7 +581,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.querySelectorAll('.photo-list-item').forEach(item => {
     item.addEventListener('mouseenter', () => {
-      if (item.dataset.voyage || item.dataset.event) return;
+      if (item.dataset.voyage || item.dataset.event || item.dataset.street) return;
       if (!photoHoverWrap || !photoHoverImg) return;
       const src = item.dataset.img;
       if (photoHoverImg.getAttribute('src') !== src) photoHoverImg.src = src;
@@ -705,22 +591,25 @@ document.addEventListener('DOMContentLoaded', () => {
       );
     });
     item.addEventListener('mouseleave', () => {
-      if (item.dataset.voyage || item.dataset.event) return;
+      if (item.dataset.voyage || item.dataset.event || item.dataset.street) return;
       if (photoHoverWrap) photoHoverWrap.classList.remove('is-visible');
       document.querySelectorAll('.photo-list-item').forEach(i => i.classList.remove('is-hovered'));
+    });
+
+    item.addEventListener('click', () => {
+      if (item.dataset.voyage || item.dataset.event || item.dataset.street) return;
+      if (!transitioning) navigateTo('photo-street');
     });
   });
 
   // ── Voyage — scatter & gallery ────────────────────────────────────────────
   const VOYAGE_PHOTOS = [
-    'Voyage/Format photo JAPAN_Plan de travail 1-21.jpg',
-    'Voyage/Format photo JAPAN_Plan de travail 1-22.jpg',
-    'Voyage/Format photo JAPAN_Plan de travail 1-23.jpg',
-    'Voyage/Format photo_JAPAN.jpg',
-    'Voyage/DSCF0929.JPG',
-    'Voyage/DSCF0931.JPG',
-    'Voyage/Format photo2_Plan de travail 1-25.jpg',
-    'Voyage/Format photo2_Plan de travail 1-26.jpg',
+    'Voyage/DSCF0929.JPG','Voyage/DSCF0931.JPG','Voyage/DSCF0932.JPG',
+    'Voyage/DSCF0949.JPG','Voyage/DSCF0953.JPG','Voyage/DSCF0987.JPG',
+    'Voyage/DSCF4796.JPG','Voyage/DSCF4861.JPG','Voyage/DSCF5823.JPG',
+    'Voyage/DSCF5846.JPG','Voyage/DSCF5882.JPG','Voyage/DSCF5883.JPG',
+    'Voyage/DSCF5886.JPG','Voyage/DSCF5887.JPG','Voyage/DSCF5892.JPG',
+    'Voyage/DSCF5898.JPG','Voyage/DSCF5902.JPG','Voyage/DSCF8271.JPG',
   ];
 
   const voyageItem    = document.querySelector('.photo-list-item[data-voyage]');
@@ -893,7 +782,8 @@ document.addEventListener('DOMContentLoaded', () => {
     voyageItem.addEventListener('mouseenter', () => {
       clearTimeout(vLeaveTimer);
       clearTimeout(vClearTimer);
-      if (eventState === 'scatter') { clearTimeout(eLeaveTimer); eHideScatter(120, () => { eventOverlay.innerHTML = ''; eSetState('off'); }); }
+      if (eventState === 'scatter')  { clearTimeout(eLeaveTimer); eHideScatter(120, () => { eventOverlay.innerHTML = ''; eSetState('off'); }); }
+      if (streetState === 'scatter') { clearTimeout(sLeaveTimer); sHideScatter(120, () => { streetOverlay.innerHTML = ''; sSetState('off'); }); }
       if (voyageState === 'gallery' || voyageState === 'lightbox') return;
       if (voyageState === 'scatter') return;
       document.querySelectorAll('.photo-list-item').forEach(i =>
@@ -910,12 +800,10 @@ document.addEventListener('DOMContentLoaded', () => {
     voyageItem.addEventListener('click', e => {
       e.stopPropagation();
       clearTimeout(vLeaveTimer);
-      if (voyageState === 'gallery') {
-        vClose();
-      } else if (voyageState === 'scatter') {
-        vHideScatter(150, vOpenGallery);
+      if (voyageState === 'scatter') {
+        vHideScatter(120, () => { voyageOverlay.innerHTML = ''; vSetState('off'); navigateTo('photo-voyage'); });
       } else {
-        vOpenGallery();
+        navigateTo('photo-voyage');
       }
     });
   }
@@ -1099,6 +987,7 @@ document.addEventListener('DOMContentLoaded', () => {
       clearTimeout(eLeaveTimer);
       clearTimeout(eClearTimer);
       if (voyageState === 'scatter') { clearTimeout(vLeaveTimer); vHideScatter(120, () => { voyageOverlay.innerHTML = ''; vSetState('off'); }); }
+      if (streetState === 'scatter') { clearTimeout(sLeaveTimer); sHideScatter(120, () => { streetOverlay.innerHTML = ''; sSetState('off'); }); }
       if (eventState === 'gallery' || eventState === 'lightbox') return;
       if (eventState === 'scatter') return;
       document.querySelectorAll('.photo-list-item').forEach(i =>
@@ -1115,17 +1004,217 @@ document.addEventListener('DOMContentLoaded', () => {
     eventItem.addEventListener('click', e => {
       e.stopPropagation();
       clearTimeout(eLeaveTimer);
-      if (eventState === 'gallery') {
-        eClose();
-      } else if (eventState === 'scatter') {
-        eHideScatter(150, eOpenGallery);
+      if (eventState === 'scatter') {
+        eHideScatter(120, () => { eventOverlay.innerHTML = ''; eSetState('off'); navigateTo('photo-event'); });
       } else {
-        eOpenGallery();
+        navigateTo('photo-event');
       }
     });
   }
 
+  // ── Street — scatter ─────────────────────────────────────────────────────
+  const STREET_PHOTOS = [
+    'street photo/DSCF6233.JPG',
+    'street photo/A009615-R1-00-1.JPG',
+    'street photo/DSCF6312.JPG',
+    'street photo/DSCF6313.JPG',
+    'street photo/A009615-R1-12-13.JPG',
+    'street photo/DSCF6362.JPG',
+    'street photo/DSCF6366.JPG',
+    'street photo/A009615-R1-16-17.JPG',
+    'street photo/DSCF6378.JPG',
+    'street photo/DSCF6379.JPG',
+    'street photo/DSCF6384.JPG',
+    'street photo/DSCF6392.JPG',
+    'street photo/DSCF6393.JPG',
+  ];
+
+  const streetItem    = document.querySelector('.photo-list-item[data-street]');
+  const streetOverlay = document.getElementById('street-overlay');
+  let streetState   = 'off';
+  let sClearTimer   = null;
+  let sLeaveTimer   = null;
+
+  function sSetState(s) { streetState = s; }
+
+  function sTriggerHide() {
+    clearTimeout(sLeaveTimer);
+    sLeaveTimer = setTimeout(() => {
+      if (streetState !== 'scatter') return;
+      document.querySelectorAll('.photo-list-item').forEach(i => i.classList.remove('is-hovered'));
+      sHideScatter(180, () => {
+        if (streetState === 'scatter') { streetOverlay.innerHTML = ''; sSetState('off'); }
+      });
+    }, 80);
+  }
+
+  function sScatter() {
+    if (!streetOverlay) return;
+    clearTimeout(sClearTimer);
+    clearTimeout(sLeaveTimer);
+    streetOverlay.innerHTML = '';
+    sSetState('scatter');
+
+    STREET_PHOTOS.forEach((src, i) => {
+      const el  = document.createElement('div');
+      el.className = 'voyage-photo';
+      const img = document.createElement('img');
+      img.src = src; img.alt = '';
+      el.appendChild(img);
+
+      const vw = window.innerWidth, vh = window.innerHeight;
+      const w  = Math.min(190, Math.max(130, vw * 0.14));
+      const h  = w * 1.5;
+      const x  = 60 + Math.random() * Math.max(0, vw - w - 120);
+      const y  = 60 + Math.random() * Math.max(0, vh - h - 120);
+      const rot = (Math.random() - 0.5) * 22;
+
+      el.style.left      = x + 'px';
+      el.style.top       = y + 'px';
+      el.style.transform = `rotate(${rot}deg) scale(0.8)`;
+      el.style.opacity   = '0';
+      streetOverlay.appendChild(el);
+
+      setTimeout(() => {
+        el.style.transform = `rotate(${rot}deg) scale(1)`;
+        el.style.opacity   = '1';
+      }, i * 18);
+    });
+  }
+
+  function sHideScatter(ms, cb) {
+    if (!streetOverlay) return cb && cb();
+    streetOverlay.querySelectorAll('.voyage-photo').forEach(el => {
+      el.style.transition = `opacity ${ms}ms ease, transform ${ms}ms ease`;
+      el.style.opacity    = '0';
+      el.style.transform  = el.style.transform.replace(/scale\([^)]*\)/g, 'scale(0.6)');
+    });
+    clearTimeout(sClearTimer);
+    sClearTimer = setTimeout(() => cb && cb(), ms + 20);
+  }
+
+  if (streetItem && streetOverlay) {
+    streetItem.addEventListener('mouseenter', () => {
+      clearTimeout(sLeaveTimer);
+      clearTimeout(sClearTimer);
+      if (voyageState === 'scatter') { clearTimeout(vLeaveTimer); vHideScatter(120, () => { voyageOverlay.innerHTML = ''; vSetState('off'); }); }
+      if (eventState  === 'scatter') { clearTimeout(eLeaveTimer); eHideScatter(120, () => { eventOverlay.innerHTML  = ''; eSetState('off'); }); }
+      if (streetState === 'scatter') return;
+      document.querySelectorAll('.photo-list-item').forEach(i =>
+        i.classList.toggle('is-hovered', i === streetItem)
+      );
+      sScatter();
+    });
+
+    streetItem.addEventListener('mouseleave', () => {
+      if (streetState === 'scatter') sTriggerHide();
+    });
+
+    streetItem.addEventListener('click', e => {
+      e.stopPropagation();
+      clearTimeout(sLeaveTimer);
+      if (streetState === 'scatter') {
+        sHideScatter(120, () => { streetOverlay.innerHTML = ''; sSetState('off'); navigateTo('photo-street'); });
+      } else {
+        navigateTo('photo-street');
+      }
+    });
+  }
+
+  // ── Lightbox partagé — galeries photo (évènement / street / voyage) ────────
+  let pgLbSrcs = [];
+  let pgLbIdx  = 0;
+  let pgLbEl   = null;
+  let pgLbImg  = null;
+
+  function pgLbBuild() {
+    pgLbEl = document.createElement('div');
+    pgLbEl.style.cssText = [
+      'position:fixed','inset:0','z-index:9600',
+      'background:rgba(0,0,0,0.94)',
+      'display:none','align-items:center','justify-content:center',
+      'cursor:zoom-out','opacity:0','transition:opacity 0.22s ease',
+    ].join(';');
+
+    pgLbImg = document.createElement('img');
+    pgLbImg.style.cssText = [
+      'max-width:92vw','max-height:92vh','object-fit:contain','display:block',
+      'cursor:default','user-select:none','-webkit-user-drag:none',
+      'transition:opacity 0.18s ease',
+    ].join(';');
+    pgLbImg.addEventListener('click', e => e.stopPropagation());
+
+    const mkBtn = (css, html, fn) => {
+      const b = document.createElement('button');
+      b.innerHTML = html;
+      b.style.cssText = css + 'background:none;border:none;color:#fff;cursor:pointer;opacity:0.55;transition:opacity 0.2s;';
+      b.addEventListener('mouseenter', () => b.style.opacity = '1');
+      b.addEventListener('mouseleave', () => b.style.opacity = '0.55');
+      b.addEventListener('click', e => { e.stopPropagation(); fn(); });
+      return b;
+    };
+
+    const prev  = mkBtn('position:absolute;left:20px;top:50%;transform:translateY(-50%);font-size:26px;padding:14px;', '&#8592;', () => pgLbNav(-1));
+    const next  = mkBtn('position:absolute;right:20px;top:50%;transform:translateY(-50%);font-size:26px;padding:14px;', '&#8594;', () => pgLbNav(1));
+    const close = mkBtn('position:absolute;top:16px;right:22px;font-size:30px;padding:8px;line-height:1;', '&times;', pgLbClose);
+
+    pgLbEl.append(pgLbImg, prev, next, close);
+    pgLbEl.addEventListener('click', pgLbClose);
+    document.body.appendChild(pgLbEl);
+  }
+
+  function pgLbOpen(srcs, idx) {
+    pgLbSrcs = srcs;
+    pgLbIdx  = idx;
+    if (!pgLbEl) pgLbBuild();
+    pgLbImg.src = pgLbSrcs[pgLbIdx];
+    pgLbEl.style.display = 'flex';
+    requestAnimationFrame(() => requestAnimationFrame(() => pgLbEl.style.opacity = '1'));
+  }
+
+  function pgLbNav(dir) {
+    pgLbIdx = (pgLbIdx + dir + pgLbSrcs.length) % pgLbSrcs.length;
+    pgLbImg.style.opacity = '0';
+    setTimeout(() => { pgLbImg.src = pgLbSrcs[pgLbIdx]; pgLbImg.style.opacity = '1'; }, 180);
+  }
+
+  function pgLbClose() {
+    if (!pgLbEl) return;
+    pgLbEl.style.opacity = '0';
+    setTimeout(() => { if (pgLbEl) pgLbEl.style.display = 'none'; }, 230);
+  }
+
+  // Évènement
+  document.querySelectorAll('#page-photo-event .pg-event-item').forEach((item, idx, all) => {
+    item.addEventListener('click', () => {
+      const srcs = [...all].map(el => el.querySelector('img').src);
+      pgLbOpen(srcs, idx);
+    });
+  });
+
+  // Street
+  document.querySelectorAll('#page-photo-street .pg-event-item').forEach((item, idx, all) => {
+    item.addEventListener('click', () => {
+      const srcs = [...all].map(el => el.querySelector('img').src);
+      pgLbOpen(srcs, idx);
+    });
+  });
+
+  // Voyage
+  document.querySelectorAll('#page-photo-voyage .pg-voyage-item').forEach((item, idx, all) => {
+    item.addEventListener('click', () => {
+      const srcs = [...all].map(el => el.querySelector('img').src);
+      pgLbOpen(srcs, idx);
+    });
+  });
+
   document.addEventListener('keydown', e => {
+    // Photo lightbox partagé
+    if (pgLbEl && pgLbEl.style.display !== 'none' && pgLbEl.style.opacity !== '0') {
+      if (e.key === 'Escape')         { pgLbClose(); return; }
+      if (e.key === 'ArrowLeft')      { pgLbNav(-1); return; }
+      if (e.key === 'ArrowRight')     { pgLbNav(1);  return; }
+    }
     // Voyage lightbox
     if (voyageState === 'lightbox') {
       const lb  = document.querySelector('.voyage-lightbox');
@@ -1158,6 +1247,11 @@ document.addEventListener('DOMContentLoaded', () => {
       clearTimeout(eLeaveTimer);
       document.querySelectorAll('.photo-list-item').forEach(i => i.classList.remove('is-hovered'));
       eHideScatter(200, () => { eventOverlay.innerHTML = ''; eSetState('off'); });
+    }
+    if (streetState === 'scatter') {
+      clearTimeout(sLeaveTimer);
+      document.querySelectorAll('.photo-list-item').forEach(i => i.classList.remove('is-hovered'));
+      sHideScatter(200, () => { streetOverlay.innerHTML = ''; sSetState('off'); });
     }
   });
 
@@ -1279,11 +1373,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Bouton footer
     document.querySelectorAll('.gf-lang-opt').forEach(s => {
       s.classList.toggle('is-active', s.dataset.lang === lang);
-    });
-    // Hero floats — mise à jour directe si déjà visibles
-    HERO_LINES.forEach(({ selector, key }) => {
-      const el = document.querySelector(selector);
-      if (el && el.style.opacity === '1') el.textContent = dict[key];
     });
   }
 
@@ -1430,7 +1519,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // GF_H = hauteur footer révélée, dynamique selon viewport
   pages.forEach(page => {
     page.addEventListener('scroll', () => {
-      const gfH = window.innerWidth <= 768 ? 400 : 240;
+      const gfH = window.innerWidth <= 768 ? 460 : 300;
       const dist = page.scrollHeight - page.scrollTop - page.clientHeight;
       const progress = Math.max(0, Math.min(1, 1 - dist / gfH));
       if (progress > 0) {
