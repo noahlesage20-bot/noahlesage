@@ -13,7 +13,7 @@
 <body>
 
 <!-- Custom cursor -->
-<div id="cursor-dot"></div>
+<div id="cursor-dot"><span id="cursor-label"></span></div>
 
 <!-- Loader -->
 <div id="loader">
@@ -92,6 +92,13 @@
   <div id="voyage-overlay"  aria-hidden="true"></div>
   <div id="event-overlay"   aria-hidden="true"></div>
   <div id="street-overlay"  aria-hidden="true"></div>
+
+  <!-- Carte flottante "projet suivant" — surcouche UI fixe (Matière Créative),
+       hors de toute .page pour ne jamais être piégée par un ancêtre transformé -->
+  <div class="floating-next-project" data-page="stoxl">
+    <img src="From S to XL.jpg" alt="From S to XL">
+    <span class="floating-next-project-title">From S to XL</span>
+  </div>
 
   <!-- ===================== WORK ===================== -->
   <section id="page-work" class="page page--scroll">
@@ -228,10 +235,10 @@
   <!-- ===================== PROJET : MATIÈRE CRÉATIVE ===================== -->
   <section id="page-matiere" class="page page--scroll">
 
-    <!-- Layout principal : gauche sticky + droite galerie images -->
+    <!-- Layout "Éditorial Déstructuré" — colonne gauche sticky (texte) + colonne droite (galerie asymétrique) -->
     <div class="mc-proj-layout">
 
-      <!-- Panneau gauche — sticky -->
+      <!-- Panneau gauche — sticky, fond opaque -->
       <div class="mc-proj-left">
         <div class="mc-split-top">
           <button class="proj-back js-back"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>work</button>
@@ -248,19 +255,37 @@
             <p class="mc-v" data-version="en">What if constraint was the real starting point<br>of creation?</p>
           </div>
         </div>
-        <div class="mc-progress">
-          <div class="mc-progress-fill" id="mc-progress-fill"></div>
+        <div class="mc-meta">
+          <div class="mc-meta-row">
+            <span class="mc-meta-label">Type</span>
+            <span class="mc-meta-val mc-v" data-version="fr">Mémoire de recherche</span>
+            <span class="mc-meta-val mc-v" data-version="en">Research thesis</span>
+          </div>
+          <div class="mc-meta-row">
+            <span class="mc-meta-label">Année</span>
+            <span class="mc-meta-val">2024–2025</span>
+          </div>
+          <div class="mc-meta-row">
+            <span class="mc-meta-label">Discipline</span>
+            <span class="mc-meta-val mc-v" data-version="fr">Design éditorial, photographie</span>
+            <span class="mc-meta-val mc-v" data-version="en">Editorial design, photography</span>
+          </div>
+          <div class="mc-meta-row">
+            <span class="mc-meta-label">ECV Bordeaux</span>
+            <span class="mc-meta-val mc-v" data-version="fr">M1 Direction Artistique</span>
+            <span class="mc-meta-val mc-v" data-version="en">M1 Art Direction</span>
+          </div>
         </div>
       </div>
 
-      <!-- Colonne droite — toutes les images empilées -->
+      <!-- Colonne droite — galerie asymétrique, data-speed pour une future parallaxe GSAP -->
       <div class="mc-proj-right">
-        <div class="mc-proj-img"><img src="mc-photo.jpg" alt="Matière Créative"></div>
-        <div class="mc-proj-img"><img src="mc-dscf1.jpg" alt=""></div>
-        <div class="mc-proj-img"><img src="mc-dscf2.jpg" alt=""></div>
-        <div class="mc-proj-img"><img src="mc-dscf3.jpg" alt=""></div>
-        <div class="mc-proj-img"><img src="mc-dscf4.jpg" alt=""></div>
-        <div class="mc-proj-img"><img src="mc-poster.jpg" alt="Matière Créative — Poster"></div>
+        <div class="mc-proj-img reveal" data-speed="0.8"><img src="mc-photo.jpg" alt="Matière Créative"></div>
+        <div class="mc-proj-img reveal" data-speed="1.1"><img src="mc-dscf1.jpg" alt=""></div>
+        <div class="mc-proj-img reveal" data-speed="0.6"><img src="mc-dscf2.jpg" alt=""></div>
+        <div class="mc-proj-img reveal" data-speed="1.05"><img src="mc-dscf3.jpg" alt=""></div>
+        <div class="mc-proj-img reveal" data-speed="0.7"><img src="mc-dscf4.jpg" alt=""></div>
+        <div class="mc-proj-img reveal" data-speed="0.9"><img src="mc-poster.jpg" alt="Matière Créative — Poster"></div>
       </div>
     </div>
 
@@ -338,17 +363,23 @@
           <h2 class="mc-split-title">From S<br>to XL</h2>
           <div class="mc-split-tagline"><p data-i18n="stoxl.tagline">Direction artistique — Graphisme</p></div>
         </div>
-        <div class="mc-progress"><div class="mc-progress-fill proj-progress-fill"></div></div>
+        <div class="mc-meta">
+          <div class="mc-meta-row">
+            <span class="mc-meta-label">Type</span>
+            <span class="mc-meta-val" data-i18n="stoxl.type">Direction artistique</span>
+          </div>
+          <div class="mc-meta-row">
+            <span class="mc-meta-label" data-i18n="fiche.year">Année</span>
+            <span class="mc-meta-val">2024</span>
+          </div>
+          <div class="mc-meta-row">
+            <span class="mc-meta-label">Discipline</span>
+            <span class="mc-meta-val" data-i18n="stoxl.discipline">Graphisme, Identité visuelle</span>
+          </div>
+        </div>
       </div>
       <div class="mc-proj-right">
-        <div class="mc-proj-img"><video src="From S to XL anim.mp4" autoplay muted loop playsinline></video></div>
-      </div>
-    </div>
-    <div class="mc-fiche reveal">
-      <div class="mc-fiche-row">
-        <div class="mc-fiche-item"><span class="mc-fiche-label">Type</span><span class="mc-fiche-value" data-i18n="stoxl.type">Direction artistique</span></div>
-        <div class="mc-fiche-item"><span class="mc-fiche-label" data-i18n="fiche.year">Année</span><span class="mc-fiche-value">2024</span></div>
-        <div class="mc-fiche-item"><span class="mc-fiche-label">Discipline</span><span class="mc-fiche-value" data-i18n="stoxl.discipline">Graphisme, Identité visuelle</span></div>
+        <div class="mc-proj-img reveal" data-speed="1"><video src="From S to XL anim.mp4" autoplay muted loop playsinline></video></div>
       </div>
     </div>
   </section>
@@ -365,17 +396,23 @@
           <h2 class="mc-split-title">Tapage</h2>
           <div class="mc-split-tagline"><p data-i18n="tapage.tagline">Graphisme — Affiche</p></div>
         </div>
-        <div class="mc-progress"><div class="mc-progress-fill proj-progress-fill"></div></div>
+        <div class="mc-meta">
+          <div class="mc-meta-row">
+            <span class="mc-meta-label">Type</span>
+            <span class="mc-meta-val" data-i18n="tapage.type">Graphisme</span>
+          </div>
+          <div class="mc-meta-row">
+            <span class="mc-meta-label" data-i18n="fiche.year">Année</span>
+            <span class="mc-meta-val">2024</span>
+          </div>
+          <div class="mc-meta-row">
+            <span class="mc-meta-label">Discipline</span>
+            <span class="mc-meta-val" data-i18n="tapage.discipline">Affiche, Typographie</span>
+          </div>
+        </div>
       </div>
       <div class="mc-proj-right">
-        <div class="mc-proj-img"><img src="work-ringer.jpg" alt="Tapage"></div>
-      </div>
-    </div>
-    <div class="mc-fiche reveal">
-      <div class="mc-fiche-row">
-        <div class="mc-fiche-item"><span class="mc-fiche-label">Type</span><span class="mc-fiche-value" data-i18n="tapage.type">Graphisme</span></div>
-        <div class="mc-fiche-item"><span class="mc-fiche-label" data-i18n="fiche.year">Année</span><span class="mc-fiche-value">2024</span></div>
-        <div class="mc-fiche-item"><span class="mc-fiche-label">Discipline</span><span class="mc-fiche-value" data-i18n="tapage.discipline">Affiche, Typographie</span></div>
+        <div class="mc-proj-img reveal" data-speed="1"><img src="work-ringer.jpg" alt="Tapage"></div>
       </div>
     </div>
   </section>
@@ -392,17 +429,23 @@
           <h2 class="mc-split-title">Palais<br>Bulles</h2>
           <div class="mc-split-tagline"><p data-i18n="palais.tagline">Direction artistique — Identité visuelle</p></div>
         </div>
-        <div class="mc-progress"><div class="mc-progress-fill proj-progress-fill"></div></div>
+        <div class="mc-meta">
+          <div class="mc-meta-row">
+            <span class="mc-meta-label">Type</span>
+            <span class="mc-meta-val" data-i18n="palais.type">Direction artistique</span>
+          </div>
+          <div class="mc-meta-row">
+            <span class="mc-meta-label" data-i18n="fiche.year">Année</span>
+            <span class="mc-meta-val">2024</span>
+          </div>
+          <div class="mc-meta-row">
+            <span class="mc-meta-label">Discipline</span>
+            <span class="mc-meta-val" data-i18n="palais.discipline">Identité visuelle, Photographie</span>
+          </div>
+        </div>
       </div>
       <div class="mc-proj-right">
-        <div class="mc-proj-img"><img src="Palais bulles.jpg" alt="Palais Bulles"></div>
-      </div>
-    </div>
-    <div class="mc-fiche reveal">
-      <div class="mc-fiche-row">
-        <div class="mc-fiche-item"><span class="mc-fiche-label">Type</span><span class="mc-fiche-value" data-i18n="palais.type">Direction artistique</span></div>
-        <div class="mc-fiche-item"><span class="mc-fiche-label" data-i18n="fiche.year">Année</span><span class="mc-fiche-value">2024</span></div>
-        <div class="mc-fiche-item"><span class="mc-fiche-label">Discipline</span><span class="mc-fiche-value" data-i18n="palais.discipline">Identité visuelle, Photographie</span></div>
+        <div class="mc-proj-img reveal" data-speed="1"><img src="Palais bulles.jpg" alt="Palais Bulles"></div>
       </div>
     </div>
   </section>
@@ -419,17 +462,23 @@
           <h2 class="mc-split-title">Cal<br>Smith</h2>
           <div class="mc-split-tagline"><p data-i18n="calsmith.tagline">Graphisme — Identité visuelle</p></div>
         </div>
-        <div class="mc-progress"><div class="mc-progress-fill proj-progress-fill"></div></div>
+        <div class="mc-meta">
+          <div class="mc-meta-row">
+            <span class="mc-meta-label">Type</span>
+            <span class="mc-meta-val" data-i18n="calsmith.type">Graphisme</span>
+          </div>
+          <div class="mc-meta-row">
+            <span class="mc-meta-label" data-i18n="fiche.year">Année</span>
+            <span class="mc-meta-val">2024</span>
+          </div>
+          <div class="mc-meta-row">
+            <span class="mc-meta-label">Discipline</span>
+            <span class="mc-meta-val" data-i18n="calsmith.discipline">Identité visuelle, Musique</span>
+          </div>
+        </div>
       </div>
       <div class="mc-proj-right">
-        <div class="mc-proj-img"><img src="Cal Smith.jpg" alt="Cal Smith"></div>
-      </div>
-    </div>
-    <div class="mc-fiche reveal">
-      <div class="mc-fiche-row">
-        <div class="mc-fiche-item"><span class="mc-fiche-label">Type</span><span class="mc-fiche-value" data-i18n="calsmith.type">Graphisme</span></div>
-        <div class="mc-fiche-item"><span class="mc-fiche-label" data-i18n="fiche.year">Année</span><span class="mc-fiche-value">2024</span></div>
-        <div class="mc-fiche-item"><span class="mc-fiche-label">Discipline</span><span class="mc-fiche-value" data-i18n="calsmith.discipline">Identité visuelle, Musique</span></div>
+        <div class="mc-proj-img reveal" data-speed="1"><img src="Cal Smith.jpg" alt="Cal Smith"></div>
       </div>
     </div>
   </section>
@@ -447,17 +496,23 @@
           <h2 class="mc-split-title">Poster</h2>
           <div class="mc-split-tagline"><p data-i18n="poster.tagline">Graphisme — Sérigraphie</p></div>
         </div>
-        <div class="mc-progress"><div class="mc-progress-fill proj-progress-fill"></div></div>
+        <div class="mc-meta">
+          <div class="mc-meta-row">
+            <span class="mc-meta-label">Type</span>
+            <span class="mc-meta-val" data-i18n="poster.type">Graphisme</span>
+          </div>
+          <div class="mc-meta-row">
+            <span class="mc-meta-label" data-i18n="fiche.year">Année</span>
+            <span class="mc-meta-val">2024</span>
+          </div>
+          <div class="mc-meta-row">
+            <span class="mc-meta-label">Discipline</span>
+            <span class="mc-meta-val" data-i18n="poster.discipline">Sérigraphie, Affiche</span>
+          </div>
+        </div>
       </div>
       <div class="mc-proj-right">
-        <div class="mc-proj-img"><img src="work-ringer.jpg" alt="Poster"></div>
-      </div>
-    </div>
-    <div class="mc-fiche reveal">
-      <div class="mc-fiche-row">
-        <div class="mc-fiche-item"><span class="mc-fiche-label">Type</span><span class="mc-fiche-value" data-i18n="poster.type">Graphisme</span></div>
-        <div class="mc-fiche-item"><span class="mc-fiche-label" data-i18n="fiche.year">Année</span><span class="mc-fiche-value">2024</span></div>
-        <div class="mc-fiche-item"><span class="mc-fiche-label">Discipline</span><span class="mc-fiche-value" data-i18n="poster.discipline">Sérigraphie, Affiche</span></div>
+        <div class="mc-proj-img reveal" data-speed="1"><img src="work-ringer.jpg" alt="Poster"></div>
       </div>
     </div>
   </section>
@@ -465,11 +520,17 @@
   <!-- ===================== SAY HELLO ===================== -->
   <section id="page-hello" class="page page--scroll">
     <div class="hello-hero">
-      <h2 class="hello-title">
-        <span class="hello-line" data-i18n="hello.1">Un projet ?</span>
-        <span class="hello-line" data-i18n="hello.2">Un besoin ?</span>
-        <span class="hello-line" data-i18n="hello.3">Parlons-en.</span>
-      </h2>
+      <div class="hello-left">
+        <div class="hello-about">
+          <span class="hello-eyebrow">Noah Lesage</span>
+          <p class="hello-bio" data-i18n="hello.bio">Graphiste et directeur artistique freelance basé à Bordeaux, je conçois des identités visuelles et des directions artistiques pour des marques, lieux culturels et événements. Mon travail mêle image, print, animation et narration dans une approche minimaliste et éditoriale, influencée par la photographie.</p>
+        </div>
+        <h2 class="hello-title">
+          <span class="hello-line" data-i18n="hello.1">Un projet ?</span>
+          <span class="hello-line" data-i18n="hello.2">Un besoin ?</span>
+          <span class="hello-line" data-i18n="hello.3">Parlons-en.</span>
+        </h2>
+      </div>
       <form class="hello-form" action="https://formspree.io/f/xdajqqvw" method="POST">
         <div class="hello-form-field">
           <label class="hello-form-label" for="hello-name" data-i18n="form.name">Nom</label>
@@ -509,13 +570,10 @@
     </div>
   </section>
 
-  <!-- Image flottante hover photo -->
-  <div id="photo-hover-wrap" class="photo-hover-wrap">
-    <img src="" alt="" id="photo-hover-img">
-  </div>
-
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

@@ -6,17 +6,41 @@ document.addEventListener('DOMContentLoaded', () => {
   const loaderBrand   = document.getElementById('loader-brand');
   const loaderPct     = document.getElementById('loader-percent');
   const site          = document.getElementById('site');
-  const overlay       = document.getElementById('page-transition');
+  // overlay supprimé — #page-transition n'existe plus dans le DOM
   const navLinks      = document.querySelectorAll('.js-nav');
   const pages         = document.querySelectorAll('.page');
   const cursorDot     = document.getElementById('cursor-dot');
+
+  // ── Titres — split ligne par ligne (masque overflow:hidden + GSAP) ───────
+  // Chaque ligne (séparée par un <br>, ou la totalité du texte s'il n'y en a
+  // pas) est enveloppée dans .gsap-line (le masque, overflow:hidden en CSS)
+  // contenant .gsap-line-inner (l'élément que GSAP fait glisser verticalement).
+  const TITLE_MASK_SEL = '.mc-split-title, .pg-sub-title, .hello-line';
+
+  function wrapMaskLines(el) {
+    if (!el || el.dataset.maskDone) return;
+    el.dataset.maskDone = '1';
+
+    // Un data-i18n sur l'élément doit être relocalisé sur la ligne interne :
+    // setLang() fait el.textContent = ... et détruirait sinon le masque.
+    const i18nKey = el.dataset.i18n;
+    if (i18nKey) el.removeAttribute('data-i18n');
+
+    const lines = el.innerHTML.split(/<br\s*\/?>/i).map(s => s.trim()).filter(Boolean);
+    el.innerHTML = lines.map(line => {
+      const attr = (i18nKey && lines.length === 1) ? ` data-i18n="${i18nKey}"` : '';
+      return `<span class="gsap-line"><span class="gsap-line-inner"${attr}>${line}</span></span>`;
+    }).join('');
+  }
+
+  document.querySelectorAll(TITLE_MASK_SEL).forEach(wrapMaskLines);
 
   // ── Protection des assets visuels ────────────────────────────────────────
   document.addEventListener('contextmenu', e => {
     const isMedia = e.target.tagName === 'IMG' || e.target.tagName === 'VIDEO';
     const inMediaContainer = e.target.closest(
       '.hero-img-wrap, .work-img-area, .voyage-photo, .voyage-gallery-item, ' +
-      '.voyage-lightbox, .photo-hover-wrap, #loader'
+      '.voyage-lightbox, #loader'
     );
     if (isMedia || inMediaContainer) e.preventDefault();
   });
@@ -25,24 +49,83 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target.tagName === 'IMG' || e.target.tagName === 'VIDEO') e.preventDefault();
   });
 
-  // ── Custom Cursor ─────────────────────────────────────────────────────────
-  let mX = 0, mY = 0;
+  // ── Custom Cursor — GSAP QuickTo ─────────────────────────────────────────
+  const cursorLabel = document.getElementById('cursor-label');
+  let mX = window.innerWidth / 2, mY = window.innerHeight / 2;
   let cursorVisible = false;
+  let magnetActive  = false;
+
+  // Centrage via GSAP (remplace le CSS transform: translate(-50%,-50%))
+  gsap.set(cursorDot, { xPercent: -50, yPercent: -50, opacity: 0 });
+
+  // QuickTo : léger lag pour un effet premium
+  const setX = gsap.quickTo(cursorDot, 'x', { duration: 0.42, ease: 'power3' });
+  const setY = gsap.quickTo(cursorDot, 'y', { duration: 0.42, ease: 'power3' });
 
   document.addEventListener('mousemove', e => {
     mX = e.clientX;
     mY = e.clientY;
-    cursorDot.style.left = mX + 'px';
-    cursorDot.style.top  = mY + 'px';
+    if (!magnetActive) { setX(mX); setY(mY); }
     if (!cursorVisible) {
-      cursorDot.style.opacity  = '1';
+      gsap.to(cursorDot, { opacity: 1, duration: 0.3 });
       cursorVisible = true;
     }
   });
 
   document.addEventListener('mouseleave', () => {
-    cursorDot.style.opacity  = '0';
+    gsap.to(cursorDot, { opacity: 0, duration: 0.3 });
     cursorVisible = false;
+  });
+
+  // ── Effet magnétique — nav + boutons ─────────────────────────────────────
+  const magnetTargets = [
+    { sel: '#main-nav a', textEl: null },
+    { sel: '.logo',       textEl: null },
+  ];
+  // NB : .floating-next-project est volontairement absente de cette liste.
+  // Le magnétisme écrit un transform en style inline sur l'élément survolé,
+  // ce qui écrase silencieusement la règle CSS .is-visible qui contrôle son
+  // apparition/disparition (l'inline gagne toujours sur la classe) — la
+  // carte restait visible en permanence dès qu'on la survolait pour cliquer.
+
+  magnetTargets.forEach(({ sel, textEl }) => {
+    document.querySelectorAll(sel).forEach(el => {
+      const inner = textEl ? el.querySelector(textEl) : el;
+
+      el.addEventListener('mouseenter', () => { magnetActive = true; });
+
+      el.addEventListener('mousemove', e => {
+        const r  = el.getBoundingClientRect();
+        const cx = r.left + r.width  / 2;
+        const cy = r.top  + r.height / 2;
+        const dx = e.clientX - cx;
+        const dy = e.clientY - cy;
+
+        // Curseur attiré vers le centre de l'élément
+        setX(cx + dx * 0.28);
+        setY(cy + dy * 0.28);
+
+        // Texte suit la souris légèrement
+        if (inner) gsap.to(inner, { x: dx * 0.16, y: dy * 0.16, duration: 0.35, ease: 'power2.out' });
+      });
+
+      el.addEventListener('mouseleave', () => {
+        magnetActive = false;
+        setX(mX); setY(mY);
+        if (inner) gsap.to(inner, { x: 0, y: 0, duration: 0.65, ease: 'elastic.out(1, 0.45)' });
+      });
+    });
+  });
+
+  // ── État VIEW — miniatures photo ─────────────────────────────────────────
+  document.querySelectorAll('.pg-event-item, .pg-voyage-item').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      cursorLabel.textContent = 'VIEW';
+      cursorDot.classList.add('is-view');
+    });
+    el.addEventListener('mouseleave', () => {
+      cursorDot.classList.remove('is-view');
+    });
   });
 
   // ── Loader = Orbit ───────────────────────────────────────────────────────
@@ -182,8 +265,33 @@ document.addEventListener('DOMContentLoaded', () => {
     if (site) site.classList.remove('is-hidden');
     const workPage = document.getElementById('page-work');
     if (workPage) {
+      gsap.set(workPage, { y: 30, opacity: 0 });
+      // Contenu immédiat pré-caché — révélé en même temps que la page, pas après
+      // (même logique que navigateTo, pour éviter le flash texte/animation globale)
+      gsap.set(workPage.querySelectorAll(ENTER_REVEAL_SEL), { opacity: 0, y: 22 });
+      gsap.set(workPage.querySelectorAll(TITLE_LINES_SEL), { yPercent: 110 });
       workPage.classList.add('is-active');
-      requestAnimationFrame(() => requestAnimationFrame(() => workPage.classList.add('anim-ready')));
+
+      const tl = gsap.timeline({
+        onComplete: () => {
+          gsap.set(workPage, { clearProps: 'transform,opacity' });
+          initRevealGSAP('work');
+        }
+      });
+      tl.addLabel('enter');
+      tl.to(workPage, { y: 0, opacity: 1, duration: 0.75, ease: 'power3.out', delay: 0.1 }, 'enter');
+      tl.to(workPage.querySelectorAll(TITLE_LINES_SEL), {
+        yPercent: 0,
+        duration: 0.95, ease: 'power4.out',
+        stagger: 0.08,
+        clearProps: 'transform',
+      }, 'enter+=0.15');
+      tl.to(workPage.querySelectorAll(ENTER_REVEAL_SEL), {
+        opacity: 1, y: 0,
+        duration: 0.6, ease: 'power3.out',
+        stagger: 0.06,
+        clearProps: 'transform,opacity',
+      }, 'enter+=0.22');
     }
 
     // État navigation (isolé pour ne pas bloquer le reste)
@@ -238,66 +346,290 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const globalFooter = document.getElementById('global-footer');
 
-  function showPage(target) {
-    pages.forEach(p => {
-      p.classList.remove('is-active', 'anim-ready', 'page-exiting');
-      p.style.clipPath = '';
-    });
-    if (globalFooter) globalFooter.classList.remove('is-visible');
-    const next = document.getElementById('page-' + target);
-    if (!next) return null;
-    next.scrollTop = 0;
-    next.classList.add('is-active');
-    if (siteHeader) siteHeader.classList.toggle('is-proj', projPages.has(target));
-    if (siteHeader) siteHeader.classList.toggle('is-hello', target === 'hello');
-    if (target === 'matiere') setTimeout(checkMCReveal, 80);
-    // Reveal initial + progress bar pour les pages projet génériques
-    if (projPages.has(target) && target !== 'matiere') {
-      setTimeout(() => {
-        if (!next) return;
-        next.querySelectorAll('.reveal:not(.is-visible)').forEach(el => {
-          if (el.getBoundingClientRect().top < window.innerHeight + 50) el.classList.add('is-visible');
-        });
-      }, 80);
-    }
-    // Reveal initial pour les sous-pages photo
-    if (photoSubPages.has(target)) {
-      setTimeout(() => {
-        if (!next) return;
-        next.querySelectorAll('.reveal:not(.is-visible)').forEach(el => {
-          if (el.getBoundingClientRect().top < window.innerHeight + 80) el.classList.add('is-visible');
-        });
-      }, 80);
-    }
-    return next;
+  // ── GSAP ScrollTrigger — Reveals organiques ───────────────────────────────
+  if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+    gsap.registerPlugin(ScrollTrigger);
   }
 
+  const gsapPagesSetup = new Set();
+
+  // Blocs "immédiats" (au-dessus de la ligne de flottaison) révélés EN SYNC avec
+  // l'arrivée de la page — évite le conflit/flash avec l'animation globale de navigateTo()
+  // (.hello-line en est exclu : il a son propre reveal ligne par ligne, voir TITLE_MASK_SEL)
+  const ENTER_REVEAL_SEL = '.mc-proj-left, .gallery-img-wrap, .proj-roulette, .photo-list-item, .hello-form, .hello-info';
+  // Médias révélés au scroll (ScrollTrigger) — pré-cachés à l'avance pour éviter
+  // le flash inhérent à gsap.fromTo() quand l'élément est déjà dans le viewport
+  const SCROLL_MEDIA_SEL = '.mc-proj-img img, .mc-proj-img video';
+  const SCROLL_GRID_SEL  = '.pg-event-item img, .pg-voyage-item img';
+  // Lignes de titre (masquées par .gsap-line) à révéler en cascade à l'arrivée de la page
+  const TITLE_LINES_SEL = TITLE_MASK_SEL + ' .gsap-line-inner';
+
+  function initRevealGSAP(pageId) {
+    if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
+
+    // Au 2e passage : juste recalibrer les positions
+    if (gsapPagesSetup.has(pageId)) { ScrollTrigger.refresh(); return; }
+    gsapPagesSetup.add(pageId);
+
+    const pageEl = document.getElementById('page-' + pageId);
+    if (!pageEl) return;
+
+    const st = trigger => ({
+      scroller:      pageEl,
+      trigger,
+      start:         'top 90%',
+      toggleActions: 'play none none none',
+    });
+
+    // ① Images projet — zoom inversé scale 1.1→1, clippé par overflow:hidden du conteneur
+    pageEl.querySelectorAll('.mc-proj-img').forEach(wrap => {
+      const media = wrap.querySelector('img, video');
+      if (!media) return;
+      gsap.fromTo(media,
+        { scale: 1.1, opacity: 0 },
+        {
+          scale: 1, opacity: 1,
+          duration: 1.4, ease: 'power3.out',
+          clearProps: 'transform,opacity',
+          scrollTrigger: st(wrap),
+        }
+      );
+    });
+
+    // ② Grilles photo — batch + micro-stagger pour un reveal en cascade naturel
+    const gridImgs = [...pageEl.querySelectorAll(SCROLL_GRID_SEL)];
+    if (gridImgs.length) {
+      ScrollTrigger.batch(gridImgs, {
+        scroller: pageEl,
+        start:    'top 92%',
+        onEnter: batch => gsap.fromTo(batch,
+          { scale: 1.1, opacity: 0 },
+          {
+            scale: 1, opacity: 1,
+            duration: 1.1, ease: 'power3.out',
+            stagger: 0.07, clearProps: 'transform,opacity',
+          }
+        ),
+      });
+    }
+
+    // ③ Blocs texte / méta — fondu + légère dérive verticale
+    pageEl.querySelectorAll('.mc-desc, .mc-quote, .mc-fiche').forEach(el => {
+      gsap.from(el, {
+        opacity: 0, y: 22,
+        duration: 0.95, ease: 'power3.out',
+        scrollTrigger: st(el),
+      });
+    });
+
+    // ④ Fallback — éléments .reveal non couverts (hello, etc.)
+    const handled = new Set([
+      ...pageEl.querySelectorAll(
+        '.mc-proj-img, .mc-desc, .mc-quote, .mc-fiche, .pg-event-item, .pg-voyage-item'
+      ),
+    ]);
+    pageEl.querySelectorAll('.reveal').forEach(el => {
+      if (handled.has(el)) return;
+      gsap.from(el, {
+        opacity: 0, y: 16,
+        duration: 0.85, ease: 'power3.out',
+        scrollTrigger: st(el),
+      });
+    });
+
+    ScrollTrigger.refresh();
+  }
+
+  // ── Carte flottante "projet suivant" — un projet au hasard, toutes pages projet ──
+  // L'élément vit HORS de toute .page (au niveau racine du site, comme
+  // #voyage-overlay etc.) pour ne jamais être piégé par un ancêtre .page qui
+  // deviendrait un containing block (transform) et casserait son position:fixed.
+  // Architecture volontairement SANS cycle de vie dynamique (pas d'attacher/
+  // détacher un écouteur à chaque navigation, source de bugs de timing) :
+  // CHAQUE page projet reçoit son écouteur de scroll UNE FOIS, en permanence,
+  // dès le chargement du site. Chaque écouteur se désactive lui-même via
+  // `is-active` — il ne peut donc jamais agir sur une page qui n'est plus
+  // affichée, ni laisser de listener orphelin à nettoyer.
+  const PROJECTS = [
+    { page: 'matiere',  img: 'mc-poster.jpg',       title: 'Matière Créative' },
+    { page: 'stoxl',    img: 'From S to XL.jpg',    title: 'From S to XL' },
+    { page: 'tapage',   img: 'work-ringer.jpg',     title: 'Tapage' },
+    { page: 'palais',   img: 'Palais bulles.jpg',   title: 'Palais Bulles' },
+    { page: 'calsmith', img: 'Cal Smith.jpg',       title: 'Cal Smith' },
+    { page: 'poster',   img: 'work-ringer.jpg',     title: 'Poster' },
+  ];
+
+  function hideFloatingNextNow() {
+    const el = document.querySelector('.floating-next-project');
+    if (!el) return;
+    // Sécurité : supprime tout transform écrit en inline par GSAP (ex: un
+    // ancien effet magnétique) — un style inline écraserait sinon en
+    // permanence la règle CSS .is-visible qui contrôle l'affichage.
+    if (typeof gsap !== 'undefined') gsap.set(el, { clearProps: 'transform' });
+    // Disparition INSTANTANÉE (pas la transition de 0.6s) : au moment où l'on
+    // change de page, la carte ne doit plus jamais rester visible même une
+    // fraction de seconde pendant la transition qui suit.
+    el.style.transition = 'none';
+    el.classList.remove('is-visible');
+    void el.offsetHeight; // force l'application immédiate avant de rétablir la transition
+    el.style.transition = '';
+  }
+
+  function pickRandomNextProject(currentPageId) {
+    const floatingNext = document.querySelector('.floating-next-project');
+    if (!floatingNext) return;
+    const choices = PROJECTS.filter(p => p.page !== currentPageId);
+    const pick = choices[Math.floor(Math.random() * choices.length)];
+    if (!pick) return;
+    floatingNext.dataset.page = pick.page;
+    const img = floatingNext.querySelector('img');
+    if (img) { img.src = pick.img; img.alt = pick.title; }
+    const titleEl = floatingNext.querySelector('.floating-next-project-title');
+    if (titleEl) titleEl.textContent = pick.title;
+  }
+
+  // Écouteurs permanents — posés une fois pour toutes, jamais recréés/détruits.
+  projPages.forEach(pid => {
+    const pEl = document.getElementById('page-' + pid);
+    if (!pEl) return;
+    pEl.addEventListener('scroll', () => {
+      // Cette page n'est plus la page affichée : ne JAMAIS toucher à la carte
+      // depuis ici, quoi qu'il se passe par ailleurs (scroll résiduel, etc.).
+      if (!pEl.classList.contains('is-active')) return;
+      const floatingNext = document.querySelector('.floating-next-project');
+      if (!floatingNext) return;
+      // % de progression du scroll (pas une distance absolue) : les pages
+      // projet secondaires (stoxl, tapage...) sont bien plus courtes que
+      // Matière Créative — un seuil en pixels s'y déclenchait quasi
+      // instantanément, sans scroll réel. Le %, lui, s'adapte à la hauteur
+      // réelle de CHAQUE page.
+      const maxScroll = pEl.scrollHeight - pEl.clientHeight;
+      const progress  = maxScroll > 0 ? pEl.scrollTop / maxScroll : 0;
+      floatingNext.classList.toggle('is-visible', progress > 0.8);
+    }, { passive: true });
+  });
+
   function navigateTo(target) {
+    if (transitioning || target === current) return;
     transitioning = true;
-    document.body.classList.add('is-transitioning');
+
+    // Cache systématiquement la carte flottante, quelle que soit la page
+    // quittée — jamais conditionnel, pour ne jamais risquer qu'elle reste
+    // visible en arrivant sur une page non-projet (work, etc.).
+    hideFloatingNextNow();
+
+    // Idem pour le scatter photo (voyage/évènement/street) — voir le
+    // commentaire de hideAllPhotoScatterNow() pour le pourquoi.
+    hideAllPhotoScatterNow();
+
+    // Reset curseur — évite un état VIEW/magnétique figé si on navigue en plein hover
+    magnetActive = false;
+    cursorDot.classList.remove('is-view');
+    setX(mX); setY(mY);
 
     const curPage = document.querySelector('.page.is-active');
-    if (curPage) curPage.classList.add('page-exiting');
+    const nextEl  = document.getElementById('page-' + target);
+    if (!nextEl) { transitioning = false; return; }
 
-    setTimeout(() => {
-      const nextEl = showPage(target);
-      current = target;
-      updateNavActive(target);
+    // Calculé AVANT la timeline : seule la 1ère visite d'une page doit "jouer"
+    // le reveal de contenu — sinon on re-cacherait des éléments déjà révélés
+    // (et jamais ré-affichés, puisque initRevealGSAP() ne se relance pas).
+    const firstVisit = !gsapPagesSetup.has(target);
 
-      if (target === 'work') setTimeout(() => {
-        const el = document.querySelector('#work-scroll-hint .work-hint-line');
-        if (el) scrambleLine(el, 'scroll ↑ ↓', 200);
-      }, 120);
-
-      requestAnimationFrame(() => {
-        if (nextEl) nextEl.classList.add('anim-ready');
-      });
-
-      setTimeout(() => {
+    const tl = gsap.timeline({
+      onStart:    () => document.body.classList.add('is-transitioning'),
+      onComplete: () => {
         document.body.classList.remove('is-transitioning');
         transitioning = false;
-      }, 380);
-    }, 220);
+      },
+    });
+
+    // ① Exit — page courante glisse vers le bas et disparaît
+    if (curPage) {
+      tl.to(curPage, {
+        y: 60, opacity: 0,
+        duration: 0.42, ease: 'power3.in',
+      });
+    }
+
+    // ② Switch — nettoyage DOM, puis positionnement de la nouvelle page sous le viewport
+    tl.call(() => {
+      pages.forEach(p => {
+        p.querySelectorAll('video').forEach(v => v.pause());
+        p.classList.remove('is-active');
+        gsap.set(p, { clearProps: 'transform,opacity' }); // CSS reprend (opacity:0, visibility:hidden)
+        p.style.clipPath = '';
+      });
+      if (globalFooter) globalFooter.classList.remove('is-visible');
+
+      // Positionner la nouvelle page invisible en dessous du viewport
+      nextEl.scrollTop = 0;
+      gsap.set(nextEl, { y: 80, opacity: 0 });
+      nextEl.classList.add('is-active'); // CSS: visibility:visible, pointer-events:auto; GSAP inline opacity:0 gagne
+
+      if (firstVisit) {
+        // Pré-cacher le contenu "immédiat" + les médias scroll-reveal AVANT que
+        // la page ne devienne visible : évite tout flash (rien n'est visible
+        // puis caché puis réanimé — tout part déjà de l'état caché).
+        gsap.set(nextEl.querySelectorAll(ENTER_REVEAL_SEL), { opacity: 0, y: 22 });
+        gsap.set(nextEl.querySelectorAll(SCROLL_MEDIA_SEL), { opacity: 0, scale: 1.1 });
+        gsap.set(nextEl.querySelectorAll(SCROLL_GRID_SEL),  { opacity: 0, scale: 1.1 });
+        // Titres — chaque ligne masquée part sous son overflow:hidden
+        gsap.set(nextEl.querySelectorAll(TITLE_LINES_SEL), { yPercent: 110 });
+      }
+
+      if (siteHeader) siteHeader.classList.toggle('is-proj', projPages.has(target));
+      if (siteHeader) siteHeader.classList.toggle('is-hello', target === 'hello');
+      current = target;
+      updateNavActive(target);
+    });
+
+    // ③ Entry — nouvelle page monte depuis le bas avec fluidité
+    tl.addLabel('enter');
+    tl.to(nextEl, {
+      y: 0, opacity: 1,
+      duration: 0.65, ease: 'power3.out',
+      onStart: () => {
+        // Lancer les vidéos un peu après le début pour éviter le saut d'image
+        setTimeout(() => {
+          nextEl.querySelectorAll('video[autoplay]').forEach(v => v.play().catch(() => {}));
+        }, 160);
+      },
+      onComplete: () => {
+        // Retirer les styles inline GSAP pour que CSS reprenne (hover, clipPath footer, etc.)
+        gsap.set(nextEl, { clearProps: 'transform,opacity' });
+        // ScrollTrigger init une fois la page stabilisée (positions/scroll fiables)
+        initRevealGSAP(target);
+        // Carte flottante "projet suivant" — nouveau projet aléatoire à chaque arrivée
+        // (l'écouteur de scroll qui gère son affichage est permanent, voir plus haut)
+        if (projPages.has(target)) pickRandomNextProject(target);
+        if (target === 'work') setTimeout(() => {
+          const el = document.querySelector('#work-scroll-hint .work-hint-line');
+          if (el) scrambleLine(el, 'scroll ↑ ↓', 200);
+        }, 120);
+      },
+    }, 'enter');
+
+    // ④ Titres — chaque ligne remonte de son masque, en tête de la cascade
+    if (firstVisit) {
+      tl.to(nextEl.querySelectorAll(TITLE_LINES_SEL), {
+        yPercent: 0,
+        duration: 0.95, ease: 'power4.out',
+        stagger: 0.08,
+        clearProps: 'transform',
+      }, 'enter+=0.05');
+    }
+
+    // ⑤ Contenu immédiat — révélé EN MÊME TEMPS que la page arrive (pas après),
+    // pour ne jamais entrer en conflit visuel avec le mouvement global du conteneur
+    if (firstVisit) {
+      tl.to(nextEl.querySelectorAll(ENTER_REVEAL_SEL), {
+        opacity: 1, y: 0,
+        duration: 0.6, ease: 'power3.out',
+        stagger: 0.06,
+        clearProps: 'transform,opacity',
+      }, 'enter+=0.12');
+    }
   }
 
   // ── Roulette factory (shared by Work & Photo) ────────────────────────────
@@ -525,89 +857,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // ── Scroll reveal pour les sous-pages photo ───────────────────────────────
-  photoSubPages.forEach(id => {
-    const pg = document.getElementById('page-' + id);
-    if (!pg) return;
-    pg.addEventListener('scroll', () => {
-      pg.querySelectorAll('.reveal:not(.is-visible)').forEach(el => {
-        if (el.getBoundingClientRect().top < window.innerHeight + 50) el.classList.add('is-visible');
-      });
-    }, { passive: true });
+  // ── Projet suivant — carte flottante (toutes les pages projet) ──────────
+  // La disparition instantanée est gérée par hideFloatingNextNow(), appelée
+  // au tout début de navigateTo() — pas besoin de la dupliquer ici.
+  document.querySelectorAll('.floating-next-project[data-page]').forEach(btn => {
+    btn.addEventListener('click', () => navigateTo(btn.dataset.page));
   });
 
   // État initial MC (data-version fr)
   document.querySelectorAll('.mc-v').forEach(el => {
     el.classList.toggle('is-shown', el.dataset.version === 'fr');
-  });
-
-  // ── Matière Créative — scroll reveal + barre de progression ─────────────
-  const mcPage         = document.getElementById('page-matiere');
-  const mcProgressFill = document.getElementById('mc-progress-fill');
-
-  function checkMCReveal() {
-    if (!mcPage) return;
-    mcPage.querySelectorAll('.reveal:not(.is-visible)').forEach(el => {
-      const r = el.getBoundingClientRect();
-      if (r.top < window.innerHeight + 50) el.classList.add('is-visible');
-    });
-  }
-
-  if (mcPage) {
-    mcPage.addEventListener('scroll', () => {
-      checkMCReveal();
-      if (mcProgressFill) {
-        const max = mcPage.scrollHeight - mcPage.clientHeight;
-        const pct = max > 0 ? (mcPage.scrollTop / max) * 100 : 0;
-        mcProgressFill.style.height = pct + '%';
-      }
-    }, { passive: true });
-  }
-
-  // ── Pages projet — progress bar + scroll reveal ──────────────────────────
-  projPages.forEach(pageId => {
-    if (pageId === 'matiere') return; // géré séparément
-    const projPage = document.getElementById('page-' + pageId);
-    if (!projPage) return;
-    const fill = projPage.querySelector('.proj-progress-fill');
-    projPage.addEventListener('scroll', () => {
-      // Barre de progression
-      if (fill) {
-        const max = projPage.scrollHeight - projPage.clientHeight;
-        fill.style.height = max > 0 ? (projPage.scrollTop / max * 100) + '%' : '0%';
-      }
-      // Reveal au scroll
-      projPage.querySelectorAll('.reveal:not(.is-visible)').forEach(el => {
-        if (el.getBoundingClientRect().top < window.innerHeight + 50) el.classList.add('is-visible');
-      });
-    }, { passive: true });
-  });
-
-  // ── Photo — image flottante au hover ─────────────────────────────────────
-  const photoHoverWrap = document.getElementById('photo-hover-wrap');
-  const photoHoverImg  = document.getElementById('photo-hover-img');
-
-  document.querySelectorAll('.photo-list-item').forEach(item => {
-    item.addEventListener('mouseenter', () => {
-      if (item.dataset.voyage || item.dataset.event || item.dataset.street) return;
-      if (!photoHoverWrap || !photoHoverImg) return;
-      const src = item.dataset.img;
-      if (photoHoverImg.getAttribute('src') !== src) photoHoverImg.src = src;
-      photoHoverWrap.classList.add('is-visible');
-      document.querySelectorAll('.photo-list-item').forEach(i =>
-        i.classList.toggle('is-hovered', i === item)
-      );
-    });
-    item.addEventListener('mouseleave', () => {
-      if (item.dataset.voyage || item.dataset.event || item.dataset.street) return;
-      if (photoHoverWrap) photoHoverWrap.classList.remove('is-visible');
-      document.querySelectorAll('.photo-list-item').forEach(i => i.classList.remove('is-hovered'));
-    });
-
-    item.addEventListener('click', () => {
-      if (item.dataset.voyage || item.dataset.event || item.dataset.street) return;
-      if (!transitioning) navigateTo('photo-street');
-    });
   });
 
   // ── Voyage — scatter & gallery ────────────────────────────────────────────
@@ -626,24 +885,26 @@ document.addEventListener('DOMContentLoaded', () => {
   let voyageState    = 'off';
   let vClearTimer    = null;
   let vLeaveTimer    = null;
+  let vEnterTimers   = []; // setTimeout des apparitions décalées — à annuler si on cache avant la fin
 
   function vSetState(s) { voyageState = s; }
 
   function vTriggerHide() {
-    clearTimeout(vLeaveTimer);
-    vLeaveTimer = setTimeout(() => {
-      if (voyageState !== 'scatter') return;
-      document.querySelectorAll('.photo-list-item').forEach(i => i.classList.remove('is-hovered'));
-      vHideScatter(180, () => {
-        if (voyageState === 'scatter') { voyageOverlay.innerHTML = ''; vSetState('off'); }
-      });
-    }, 80);
+    // Déclenchement immédiat, lié uniquement au survol du texte "Voyage" —
+    // pas de délai d'attente avant de lancer la disparition.
+    if (voyageState !== 'scatter') return;
+    document.querySelectorAll('.photo-list-item').forEach(i => i.classList.remove('is-hovered'));
+    vHideScatter(150, () => {
+      if (voyageState === 'scatter') { voyageOverlay.innerHTML = ''; vSetState('off'); }
+    });
   }
 
   function vScatter() {
     if (!voyageOverlay) return;
     clearTimeout(vClearTimer);
     clearTimeout(vLeaveTimer);
+    vEnterTimers.forEach(clearTimeout);
+    vEnterTimers = [];
     voyageOverlay.innerHTML = '';
     vSetState('scatter');
 
@@ -665,17 +926,25 @@ document.addEventListener('DOMContentLoaded', () => {
       el.style.top       = y + 'px';
       el.style.transform = `rotate(${rot}deg) scale(0.8)`;
       el.style.opacity   = '0';
+      // La disparition ne dépend que du survol du texte "Voyage" — cliquer
+      // sur une miniature reste possible, mais ne prolonge plus la zone de survol.
+      el.addEventListener('click', e => { e.stopPropagation(); vGoToPage(); });
       voyageOverlay.appendChild(el);
 
-      setTimeout(() => {
+      vEnterTimers.push(setTimeout(() => {
         el.style.transform = `rotate(${rot}deg) scale(1)`;
         el.style.opacity   = '1';
-      }, i * 22);
+      }, i * 22));
     });
   }
 
   function vHideScatter(ms, cb) {
     if (!voyageOverlay) return cb && cb();
+    // Annule les apparitions pas encore jouées : sans ça, une photo pas
+    // encore révélée peut "sauter" à opacity:1 après le lancement du fondu
+    // de sortie et rester visible au lieu de disparaître.
+    vEnterTimers.forEach(clearTimeout);
+    vEnterTimers = [];
     voyageOverlay.querySelectorAll('.voyage-photo').forEach(el => {
       el.style.transition = `opacity ${ms}ms ease, transform ${ms}ms ease`;
       el.style.opacity    = '0';
@@ -685,6 +954,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Ne pas toucher au innerHTML ici — le callback s'en charge
     // (évite le flash "DOM vide" entre scatter et galerie)
     vClearTimer = setTimeout(() => cb && cb(), ms + 20);
+  }
+
+  // Ré-entrée rapide pendant un fondu de sortie en cours : au lieu d'ignorer
+  // le survol (l'état est encore 'scatter' tant que le nettoyage n'a pas eu
+  // lieu), on annule ce nettoyage et on ramène les photos déjà en place à
+  // pleine opacité — sans les recréer ni les repositionner.
+  function vRestoreScatter() {
+    clearTimeout(vClearTimer);
+    voyageOverlay.querySelectorAll('.voyage-photo').forEach(el => {
+      el.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+      el.style.opacity    = '1';
+      el.style.transform  = el.style.transform.replace(/scale\([^)]*\)/g, 'scale(1)');
+    });
   }
 
   function vOpenGallery() {
@@ -786,6 +1068,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 140);
   }
 
+  // Clic — sur le texte "Voyage" OU directement sur une miniature éparpillée :
+  // cache le scatter puis navigue. Indépendant des minuteurs de survol
+  // (vLeaveTimer/vClearTimer) pour ne jamais être annulé par un mouseleave
+  // concurrent (ex: la miniature qui rétrécit sous le curseur au clic).
+  function vGoToPage() {
+    clearTimeout(vLeaveTimer);
+    clearTimeout(vClearTimer);
+    vEnterTimers.forEach(clearTimeout);
+    vEnterTimers = [];
+
+    if (voyageState === 'scatter') {
+      vSetState('off'); // verrouillé tout de suite : plus aucun mouseleave ne peut interférer
+      document.querySelectorAll('.photo-list-item').forEach(i => i.classList.remove('is-hovered'));
+      voyageOverlay.querySelectorAll('.voyage-photo').forEach(el => {
+        el.style.transition = 'opacity 0.12s ease, transform 0.12s ease';
+        el.style.opacity = '0';
+        el.style.transform = el.style.transform.replace(/scale\([^)]*\)/g, 'scale(0.6)');
+      });
+      setTimeout(() => { voyageOverlay.innerHTML = ''; navigateTo('photo-voyage'); }, 140);
+    } else {
+      navigateTo('photo-voyage');
+    }
+  }
+
   if (voyageItem && voyageOverlay) {
     voyageItem.addEventListener('mouseenter', () => {
       clearTimeout(vLeaveTimer);
@@ -793,10 +1099,13 @@ document.addEventListener('DOMContentLoaded', () => {
       if (eventState === 'scatter')  { clearTimeout(eLeaveTimer); eHideScatter(120, () => { eventOverlay.innerHTML = ''; eSetState('off'); }); }
       if (streetState === 'scatter') { clearTimeout(sLeaveTimer); sHideScatter(120, () => { streetOverlay.innerHTML = ''; sSetState('off'); }); }
       if (voyageState === 'gallery' || voyageState === 'lightbox') return;
-      if (voyageState === 'scatter') return;
       document.querySelectorAll('.photo-list-item').forEach(i =>
         i.classList.toggle('is-hovered', i === voyageItem)
       );
+      // Ré-entrée rapide pendant que le fondu de sortie précédent tournait
+      // encore (l'état n'a pas eu le temps de repasser à 'off') : on remet
+      // les photos déjà présentes à pleine opacité plutôt que d'ignorer ce survol.
+      if (voyageState === 'scatter') { vRestoreScatter(); return; }
       vScatter();
     });
 
@@ -807,12 +1116,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     voyageItem.addEventListener('click', e => {
       e.stopPropagation();
-      clearTimeout(vLeaveTimer);
-      if (voyageState === 'scatter') {
-        vHideScatter(120, () => { voyageOverlay.innerHTML = ''; vSetState('off'); navigateTo('photo-voyage'); });
-      } else {
-        navigateTo('photo-voyage');
-      }
+      vGoToPage();
     });
   }
 
@@ -833,24 +1137,26 @@ document.addEventListener('DOMContentLoaded', () => {
   let eventState   = 'off';
   let eClearTimer  = null;
   let eLeaveTimer  = null;
+  let eEnterTimers = []; // setTimeout des apparitions décalées — à annuler si on cache avant la fin
 
   function eSetState(s) { eventState = s; }
 
   function eTriggerHide() {
-    clearTimeout(eLeaveTimer);
-    eLeaveTimer = setTimeout(() => {
-      if (eventState !== 'scatter') return;
-      document.querySelectorAll('.photo-list-item').forEach(i => i.classList.remove('is-hovered'));
-      eHideScatter(180, () => {
-        if (eventState === 'scatter') { eventOverlay.innerHTML = ''; eSetState('off'); }
-      });
-    }, 60);
+    // Déclenchement immédiat, lié uniquement au survol du texte "Évènement" —
+    // pas de délai d'attente avant de lancer la disparition.
+    if (eventState !== 'scatter') return;
+    document.querySelectorAll('.photo-list-item').forEach(i => i.classList.remove('is-hovered'));
+    eHideScatter(150, () => {
+      if (eventState === 'scatter') { eventOverlay.innerHTML = ''; eSetState('off'); }
+    });
   }
 
   function eScatter() {
     if (!eventOverlay) return;
     clearTimeout(eClearTimer);
     clearTimeout(eLeaveTimer);
+    eEnterTimers.forEach(clearTimeout);
+    eEnterTimers = [];
     eventOverlay.innerHTML = '';
     eSetState('scatter');
 
@@ -872,17 +1178,25 @@ document.addEventListener('DOMContentLoaded', () => {
       el.style.top       = y + 'px';
       el.style.transform = `rotate(${rot}deg) scale(0.8)`;
       el.style.opacity   = '0';
+      // La disparition ne dépend que du survol du texte "Évènement" — cliquer
+      // sur une miniature reste possible, mais ne prolonge plus la zone de survol.
+      el.addEventListener('click', e => { e.stopPropagation(); eGoToPage(); });
       eventOverlay.appendChild(el);
 
-      setTimeout(() => {
+      eEnterTimers.push(setTimeout(() => {
         el.style.transform = `rotate(${rot}deg) scale(1)`;
         el.style.opacity   = '1';
-      }, i * 16);
+      }, i * 16));
     });
   }
 
   function eHideScatter(ms, cb) {
     if (!eventOverlay) return cb && cb();
+    // Annule les apparitions pas encore jouées : sans ça, une photo pas
+    // encore révélée peut "sauter" à opacity:1 après le lancement du fondu
+    // de sortie et rester visible au lieu de disparaître.
+    eEnterTimers.forEach(clearTimeout);
+    eEnterTimers = [];
     eventOverlay.querySelectorAll('.voyage-photo').forEach(el => {
       el.style.transition = `opacity ${ms}ms ease, transform ${ms}ms ease`;
       el.style.opacity    = '0';
@@ -890,6 +1204,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     clearTimeout(eClearTimer);
     eClearTimer = setTimeout(() => cb && cb(), ms + 20);
+  }
+
+  // Ré-entrée rapide pendant un fondu de sortie en cours : au lieu d'ignorer
+  // le survol (l'état est encore 'scatter' tant que le nettoyage n'a pas eu
+  // lieu), on annule ce nettoyage et on ramène les photos déjà en place à
+  // pleine opacité — sans les recréer ni les repositionner.
+  function eRestoreScatter() {
+    clearTimeout(eClearTimer);
+    eventOverlay.querySelectorAll('.voyage-photo').forEach(el => {
+      el.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+      el.style.opacity    = '1';
+      el.style.transform  = el.style.transform.replace(/scale\([^)]*\)/g, 'scale(1)');
+    });
   }
 
   function eOpenGallery() {
@@ -990,6 +1317,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 140);
   }
 
+  // Clic — sur le texte "Évènement" OU directement sur une miniature éparpillée :
+  // indépendant des minuteurs de survol (eLeaveTimer/eClearTimer) pour ne
+  // jamais être annulé par un mouseleave concurrent (ex: la miniature qui
+  // rétrécit sous le curseur au clic).
+  function eGoToPage() {
+    clearTimeout(eLeaveTimer);
+    clearTimeout(eClearTimer);
+    eEnterTimers.forEach(clearTimeout);
+    eEnterTimers = [];
+
+    if (eventState === 'scatter') {
+      eSetState('off'); // verrouillé tout de suite : plus aucun mouseleave ne peut interférer
+      document.querySelectorAll('.photo-list-item').forEach(i => i.classList.remove('is-hovered'));
+      eventOverlay.querySelectorAll('.voyage-photo').forEach(el => {
+        el.style.transition = 'opacity 0.12s ease, transform 0.12s ease';
+        el.style.opacity = '0';
+        el.style.transform = el.style.transform.replace(/scale\([^)]*\)/g, 'scale(0.6)');
+      });
+      setTimeout(() => { eventOverlay.innerHTML = ''; navigateTo('photo-event'); }, 140);
+    } else {
+      navigateTo('photo-event');
+    }
+  }
+
   if (eventItem && eventOverlay) {
     eventItem.addEventListener('mouseenter', () => {
       clearTimeout(eLeaveTimer);
@@ -997,10 +1348,13 @@ document.addEventListener('DOMContentLoaded', () => {
       if (voyageState === 'scatter') { clearTimeout(vLeaveTimer); vHideScatter(120, () => { voyageOverlay.innerHTML = ''; vSetState('off'); }); }
       if (streetState === 'scatter') { clearTimeout(sLeaveTimer); sHideScatter(120, () => { streetOverlay.innerHTML = ''; sSetState('off'); }); }
       if (eventState === 'gallery' || eventState === 'lightbox') return;
-      if (eventState === 'scatter') return;
       document.querySelectorAll('.photo-list-item').forEach(i =>
         i.classList.toggle('is-hovered', i === eventItem)
       );
+      // Ré-entrée rapide pendant que le fondu de sortie précédent tournait
+      // encore (l'état n'a pas eu le temps de repasser à 'off') : on remet
+      // les photos déjà présentes à pleine opacité plutôt que d'ignorer ce survol.
+      if (eventState === 'scatter') { eRestoreScatter(); return; }
       eScatter();
     });
 
@@ -1011,12 +1365,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     eventItem.addEventListener('click', e => {
       e.stopPropagation();
-      clearTimeout(eLeaveTimer);
-      if (eventState === 'scatter') {
-        eHideScatter(120, () => { eventOverlay.innerHTML = ''; eSetState('off'); navigateTo('photo-event'); });
-      } else {
-        navigateTo('photo-event');
-      }
+      eGoToPage();
     });
   }
 
@@ -1042,24 +1391,26 @@ document.addEventListener('DOMContentLoaded', () => {
   let streetState   = 'off';
   let sClearTimer   = null;
   let sLeaveTimer   = null;
+  let sEnterTimers  = []; // setTimeout des apparitions décalées — à annuler si on cache avant la fin
 
   function sSetState(s) { streetState = s; }
 
   function sTriggerHide() {
-    clearTimeout(sLeaveTimer);
-    sLeaveTimer = setTimeout(() => {
-      if (streetState !== 'scatter') return;
-      document.querySelectorAll('.photo-list-item').forEach(i => i.classList.remove('is-hovered'));
-      sHideScatter(180, () => {
-        if (streetState === 'scatter') { streetOverlay.innerHTML = ''; sSetState('off'); }
-      });
-    }, 80);
+    // Déclenchement immédiat, lié uniquement au survol du texte "Street photo" —
+    // pas de délai d'attente avant de lancer la disparition.
+    if (streetState !== 'scatter') return;
+    document.querySelectorAll('.photo-list-item').forEach(i => i.classList.remove('is-hovered'));
+    sHideScatter(150, () => {
+      if (streetState === 'scatter') { streetOverlay.innerHTML = ''; sSetState('off'); }
+    });
   }
 
   function sScatter() {
     if (!streetOverlay) return;
     clearTimeout(sClearTimer);
     clearTimeout(sLeaveTimer);
+    sEnterTimers.forEach(clearTimeout);
+    sEnterTimers = [];
     streetOverlay.innerHTML = '';
     sSetState('scatter');
 
@@ -1081,17 +1432,25 @@ document.addEventListener('DOMContentLoaded', () => {
       el.style.top       = y + 'px';
       el.style.transform = `rotate(${rot}deg) scale(0.8)`;
       el.style.opacity   = '0';
+      // La disparition ne dépend que du survol du texte "Street photo" —
+      // cliquer sur une miniature reste possible, mais ne prolonge plus la zone de survol.
+      el.addEventListener('click', e => { e.stopPropagation(); sGoToPage(); });
       streetOverlay.appendChild(el);
 
-      setTimeout(() => {
+      sEnterTimers.push(setTimeout(() => {
         el.style.transform = `rotate(${rot}deg) scale(1)`;
         el.style.opacity   = '1';
-      }, i * 18);
+      }, i * 18));
     });
   }
 
   function sHideScatter(ms, cb) {
     if (!streetOverlay) return cb && cb();
+    // Annule les apparitions pas encore jouées : sans ça, une photo pas
+    // encore révélée peut "sauter" à opacity:1 après le lancement du fondu
+    // de sortie et rester visible au lieu de disparaître.
+    sEnterTimers.forEach(clearTimeout);
+    sEnterTimers = [];
     streetOverlay.querySelectorAll('.voyage-photo').forEach(el => {
       el.style.transition = `opacity ${ms}ms ease, transform ${ms}ms ease`;
       el.style.opacity    = '0';
@@ -1101,16 +1460,56 @@ document.addEventListener('DOMContentLoaded', () => {
     sClearTimer = setTimeout(() => cb && cb(), ms + 20);
   }
 
+  // Ré-entrée rapide pendant un fondu de sortie en cours : au lieu d'ignorer
+  // le survol (l'état est encore 'scatter' tant que le nettoyage n'a pas eu
+  // lieu), on annule ce nettoyage et on ramène les photos déjà en place à
+  // pleine opacité — sans les recréer ni les repositionner.
+  function sRestoreScatter() {
+    clearTimeout(sClearTimer);
+    streetOverlay.querySelectorAll('.voyage-photo').forEach(el => {
+      el.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+      el.style.opacity    = '1';
+      el.style.transform  = el.style.transform.replace(/scale\([^)]*\)/g, 'scale(1)');
+    });
+  }
+
+  // Clic — sur le texte "Street photo" OU directement sur une miniature éparpillée :
+  // indépendant des minuteurs de survol (sLeaveTimer/sClearTimer) pour ne
+  // jamais être annulé par un mouseleave concurrent (ex: la miniature qui
+  // rétrécit sous le curseur au clic).
+  function sGoToPage() {
+    clearTimeout(sLeaveTimer);
+    clearTimeout(sClearTimer);
+    sEnterTimers.forEach(clearTimeout);
+    sEnterTimers = [];
+
+    if (streetState === 'scatter') {
+      sSetState('off'); // verrouillé tout de suite : plus aucun mouseleave ne peut interférer
+      document.querySelectorAll('.photo-list-item').forEach(i => i.classList.remove('is-hovered'));
+      streetOverlay.querySelectorAll('.voyage-photo').forEach(el => {
+        el.style.transition = 'opacity 0.12s ease, transform 0.12s ease';
+        el.style.opacity = '0';
+        el.style.transform = el.style.transform.replace(/scale\([^)]*\)/g, 'scale(0.6)');
+      });
+      setTimeout(() => { streetOverlay.innerHTML = ''; navigateTo('photo-street'); }, 140);
+    } else {
+      navigateTo('photo-street');
+    }
+  }
+
   if (streetItem && streetOverlay) {
     streetItem.addEventListener('mouseenter', () => {
       clearTimeout(sLeaveTimer);
       clearTimeout(sClearTimer);
       if (voyageState === 'scatter') { clearTimeout(vLeaveTimer); vHideScatter(120, () => { voyageOverlay.innerHTML = ''; vSetState('off'); }); }
       if (eventState  === 'scatter') { clearTimeout(eLeaveTimer); eHideScatter(120, () => { eventOverlay.innerHTML  = ''; eSetState('off'); }); }
-      if (streetState === 'scatter') return;
       document.querySelectorAll('.photo-list-item').forEach(i =>
         i.classList.toggle('is-hovered', i === streetItem)
       );
+      // Ré-entrée rapide pendant que le fondu de sortie précédent tournait
+      // encore (l'état n'a pas eu le temps de repasser à 'off') : on remet
+      // les photos déjà présentes à pleine opacité plutôt que d'ignorer ce survol.
+      if (streetState === 'scatter') { sRestoreScatter(); return; }
       sScatter();
     });
 
@@ -1120,13 +1519,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     streetItem.addEventListener('click', e => {
       e.stopPropagation();
-      clearTimeout(sLeaveTimer);
-      if (streetState === 'scatter') {
-        sHideScatter(120, () => { streetOverlay.innerHTML = ''; sSetState('off'); navigateTo('photo-street'); });
-      } else {
-        navigateTo('photo-street');
-      }
+      sGoToPage();
     });
+  }
+
+  // Nettoyage total du scatter photo (voyage/évènement/street) — appelé à
+  // chaque navigation, quel que soit le chemin emprunté (nav, logo, footer,
+  // pas seulement le clic sur la miniature/le texte). Ces overlays vivent en
+  // position fixed au niveau racine du DOM (hors des .page) pour ne jamais
+  // être piégés par un ancêtre transformé — mais ça veut dire qu'ils restent
+  // affichés sur N'IMPORTE QUELLE page tant qu'on ne les cache pas nous-même :
+  // sans ce nettoyage, quitter #page-photo en pleine animation (ex: clic sur
+  // le logo) laissait l'état bloqué sur 'scatter' et l'overlay affiché par
+  // dessus la page suivante — puis, au retour, le survol suivant tombait sur
+  // vRestoreScatter() au lieu de vScatter() et ne montrait rien (ou de vieilles
+  // photos), d'où le bug "des fois ça n'apparaît pas / des fois ça reste".
+  function hideAllPhotoScatterNow() {
+    clearTimeout(vClearTimer); clearTimeout(vLeaveTimer);
+    vEnterTimers.forEach(clearTimeout); vEnterTimers = [];
+    clearTimeout(eClearTimer); clearTimeout(eLeaveTimer);
+    eEnterTimers.forEach(clearTimeout); eEnterTimers = [];
+    clearTimeout(sClearTimer); clearTimeout(sLeaveTimer);
+    sEnterTimers.forEach(clearTimeout); sEnterTimers = [];
+
+    if (voyageOverlay) { voyageOverlay.innerHTML = ''; voyageOverlay.className = ''; }
+    if (eventOverlay)  { eventOverlay.innerHTML  = ''; eventOverlay.className  = ''; }
+    if (streetOverlay) { streetOverlay.innerHTML = ''; streetOverlay.className = ''; }
+
+    voyageState = 'off';
+    eventState  = 'off';
+    streetState = 'off';
+
+    document.querySelectorAll('.photo-list-item').forEach(i => i.classList.remove('is-hovered'));
+    document.querySelectorAll('.voyage-lightbox').forEach(lb => lb.remove());
   }
 
   // ── Lightbox partagé — galeries photo (évènement / street / voyage) ────────
@@ -1309,6 +1734,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'form.email.ph': 'votre@email.com',
       'form.msg.ph': 'Parlez-moi de votre projet…',
       'form.send': 'Envoyer →', 'form.retry': 'Réessayer →', 'form.confirm': 'Message envoyé — à bientôt.',
+      'hello.bio': 'Graphiste et directeur artistique freelance basé à Bordeaux, je conçois des identités visuelles et des directions artistiques pour des marques, lieux culturels et événements. Mon travail mêle image, print, animation et narration dans une approche minimaliste et éditoriale, influencée par la photographie.',
       'hello.social': 'Réseaux', 'hello.freelance': 'Freelance indépendant',
       'photo.voyage': 'Voyage', 'photo.event': 'Évènement',
       'stoxl.tagline': 'Direction artistique — Graphisme',
@@ -1334,6 +1760,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'form.email.ph': 'your@email.com',
       'form.msg.ph': 'Tell me about your project…',
       'form.send': 'Send →', 'form.retry': 'Try again →', 'form.confirm': 'Message sent — talk soon.',
+      'hello.bio': 'Freelance graphic designer and art director based in Bordeaux, I design visual identities and art directions for brands, cultural venues and events. My work blends image, print, animation and narrative in a minimalist and editorial approach, influenced by photography.',
       'hello.social': 'Social', 'hello.freelance': 'Independent freelance',
       'photo.voyage': 'Travel', 'photo.event': 'Event',
       'stoxl.tagline': 'Art direction — Graphic design',
