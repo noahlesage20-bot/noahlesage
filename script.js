@@ -58,9 +58,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Centrage via GSAP (remplace le CSS transform: translate(-50%,-50%))
   gsap.set(cursorDot, { xPercent: -50, yPercent: -50, opacity: 0 });
 
-  // QuickTo : léger lag pour un effet premium
-  const setX = gsap.quickTo(cursorDot, 'x', { duration: 0.42, ease: 'power3' });
-  const setY = gsap.quickTo(cursorDot, 'y', { duration: 0.42, ease: 'power3' });
+  // QuickTo : léger lag pour un effet premium (allégé — 0.42 se sentait lent à l'usage)
+  const setX = gsap.quickTo(cursorDot, 'x', { duration: 0.18, ease: 'power3' });
+  const setY = gsap.quickTo(cursorDot, 'y', { duration: 0.18, ease: 'power3' });
 
   document.addEventListener('mousemove', e => {
     mX = e.clientX;
@@ -129,8 +129,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ── Loader = Orbit ───────────────────────────────────────────────────────
-  const O_SRCS  = ['mc-poster.jpg', 'From S to XL anim.mp4', 'Palais bulles.jpg', 'Cal Smith.jpg', 'a2.jpg'];
-  const O_TILTS = [-8, 12, -4, 9, -13];
+  const O_SRCS  = ['mc-poster.jpg', 'From S to XL anim.mp4', 'Palais bulles.jpg', 'Cal Smith.jpg', 'Poster et animation/a2.jpg', './Tapage/Publi TAPAGE 19:12.mp4'];
+  const O_TILTS = [-8, 12, -4, 9, -13, 6];
   O_SRCS.forEach(src => { const i = new Image(); i.src = src; });
 
   const O_VW = window.innerWidth, O_VH = window.innerHeight;
@@ -298,6 +298,15 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       current = 'work';
       updateNavActive('work');
+      // Coupe les <video autoplay> des autres pages projet : le navigateur
+      // les démarre tous dès le chargement (visibility:hidden n'empêche pas
+      // l'autoplay), et ce sweep n'existe normalement que dans navigateTo() —
+      // cette entrée sur 'work' passe par le loader, pas par navigateTo(),
+      // donc sans ça toutes les animations en boucle des autres pages
+      // tournaient invisiblement en arrière-plan indéfiniment.
+      pages.forEach(p => {
+        if (p !== workPage) p.querySelectorAll('video').forEach(v => v.pause());
+      });
     } catch (e) {}
 
     setTimeout(burstFunDots, 1750);
@@ -310,12 +319,34 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── Navigation ────────────────────────────────────────────────────────────
   let current = 'work';
   let transitioning = false;
+  let navSafetyTimer = null;
 
   navLinks.forEach(link => {
     link.addEventListener('click', e => {
       e.preventDefault();
-      const target = link.dataset.target;
-      if (target === current || transitioning) return;
+      if (transitioning) return;
+      const target   = link.dataset.target;
+      const isLogo   = link.classList.contains('logo');
+
+      if (target === current) {
+        // Déjà sur la page ciblée : pour "work" (logo "Ringer Studio." ou
+        // lien "work"), un clic ramène la liste de projets tout en haut, sur
+        // le premier projet — plutôt que de ne rien faire.
+        if (target === 'work') {
+          const pageEl = document.getElementById('page-work');
+          if (pageEl) pageEl.scrollTo({ top: 0, behavior: 'smooth' });
+          if (workRoulette) workRoulette.reset();
+        }
+        return;
+      }
+
+      // Le logo "Ringer Studio." = home, et la home EST le 1er projet de
+      // Work : où qu'on l'ait laissée, la roulette est remise sur le 1er
+      // projet avant même la transition (invisible, la page work n'étant
+      // pas encore affichée) — pour toujours atterrir sur le même état
+      // depuis n'importe quelle autre page du site.
+      if (isLogo && target === 'work' && workRoulette) workRoulette.reset();
+
       navigateTo(target);
     });
   });
@@ -440,6 +471,294 @@ document.addEventListener('DOMContentLoaded', () => {
     ScrollTrigger.refresh();
   }
 
+  // ── Bande scroll horizontale (fond noir) — composant réutilisable ────────
+  // Aucun lien avec le scroll de la page : descendre la page ne bouge jamais
+  // les visuels. Le panoramique ne réagit qu'à deux gestes faits directement
+  // dans la case — molette/trackpad (wheel) et cliquer-glisser (drag), tous
+  // deux avec preventDefault, posés sur .proj-strip. Même famille de
+  // pattern que la roulette Work/Photo (initRoulette, plus haut) pour la
+  // molette ; le drag suit le curseur au pixel près.
+  //
+  // Panoramique de GAUCHE À DROITE : la piste part entièrement décalée à
+  // gauche (le DERNIER item du DOM, aligné à droite de la piste, est donc
+  // visible en premier) et revient à sa position naturelle en bout de
+  // course — voir l'ordre DOM (volontairement inversé) des .proj-strip-item
+  // dans index.html.
+  //
+  // Lissage du mouvement via une boucle requestAnimationFrame (currentX
+  // rattrape targetX par interpolation) — le drag, lui, suit le curseur sans
+  // lissage (currentX = targetX pendant le drag) pour rester réactif au
+  // pixel près pendant qu'on glisse.
+  //
+  // initProjStrip(pageId) s'appelle une fois par page utilisant ce
+  // composant (voir les appels tout en bas de cette fonction) — chaque
+  // page a sa propre instance indépendante (mesures, drag, molette).
+  function initProjStrip(pageId) {
+    const strip = document.querySelector('#page-' + pageId + ' .proj-strip');
+    const track = document.querySelector('#page-' + pageId + ' .proj-strip-track');
+    if (!strip || !track) return;
+    const items = [...track.querySelectorAll('.proj-strip-item')];
+
+    let panDist     = 0;     // distance horizontale totale à parcourir (dépend de la largeur réelle de la piste)
+    let itemCenters = [];    // centre de chaque item dans le référentiel de la piste (statique, cache en dur)
+    let targetX     = 0;     // position visée
+    let currentX    = 0;     // position réellement appliquée (lissée hors drag, immédiate pendant le drag)
+    let dragging    = false;
+    let dragStartX  = 0;
+    let dragFromX   = 0;
+    let dragMoved   = 0;     // distance totale parcourue pendant le drag en cours — sert à distinguer un clic d'un glisser
+
+    function measure() {
+      panDist     = Math.max(0, track.scrollWidth - strip.clientWidth);
+      targetX     = Math.max(-panDist, Math.min(0, targetX));
+      itemCenters = items.map(el => el.offsetLeft + el.offsetWidth / 2);
+    }
+
+    function applyFocusEffect() {
+      // Effet de mise au point : les visuels proches du centre de la case
+      // restent pleins ; ceux qui approchent des bords s'estompent et
+      // rétrécissent légèrement. Calcul pur (centres mis en cache dans
+      // measure()) — pas de lecture de layout par item à chaque frame.
+      const half = strip.clientWidth / 2;
+      items.forEach((item, i) => {
+        const screenCenter = itemCenters[i] + currentX;
+        const t = Math.max(0, Math.min(1, Math.abs(screenCenter - half) / half));
+        item.style.transform = `scale(${(1 - t * 0.1).toFixed(3)})`;
+        item.style.opacity   = (1 - t * 0.4).toFixed(3);
+      });
+    }
+
+    function render() {
+      requestAnimationFrame(render);
+      if (window.innerWidth <= 900) return;
+
+      if (dragging) {
+        currentX = targetX; // suit le curseur sans délai pendant le drag
+      } else {
+        currentX += (targetX - currentX) * 0.16;
+        if (Math.abs(targetX - currentX) < 0.05) currentX = targetX;
+      }
+      track.style.transform = `translateX(${currentX}px)`;
+      applyFocusEffect();
+    }
+
+    measure();
+    targetX  = -panDist; // départ : dernier item du DOM (le hero) visible en premier
+    currentX = targetX;
+    requestAnimationFrame(render);
+
+    if (window.innerWidth > 900) {
+      // Molette / trackpad
+      strip.addEventListener('wheel', e => {
+        e.preventDefault();
+        // Trackpad (swipe horizontal) ou molette classique (verticale) :
+        // on prend l'axe qui porte le plus de signal.
+        const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+        targetX = Math.max(-panDist, Math.min(0, targetX + delta));
+      }, { passive: false });
+
+      // Cliquer-glisser
+      strip.addEventListener('mousedown', e => {
+        dragging   = true;
+        dragStartX = e.clientX;
+        dragFromX  = targetX;
+        dragMoved  = 0;
+        e.preventDefault();
+      });
+      window.addEventListener('mousemove', e => {
+        if (!dragging) return;
+        const dx = e.clientX - dragStartX;
+        dragMoved = Math.max(dragMoved, Math.abs(dx));
+        targetX = Math.max(-panDist, Math.min(0, dragFromX + dx));
+      });
+      window.addEventListener('mouseup', () => { dragging = false; });
+    }
+
+    window.addEventListener('resize', measure);
+
+    // Les médias (surtout les vidéos) finissent de charger après coup et
+    // changent scrollWidth : on remesure une fois que tout est prêt, pour ne
+    // jamais couper la dernière image du panoramique.
+    const media   = [...track.querySelectorAll('img, video')];
+    let   pending = media.length;
+    const onReady = () => { if (--pending <= 0) measure(); };
+    media.forEach(m => {
+      if (m.tagName === 'IMG') {
+        if (m.complete) onReady(); else m.addEventListener('load', onReady, { once: true });
+      } else {
+        if (m.readyState >= 1) onReady(); else m.addEventListener('loadedmetadata', onReady, { once: true });
+      }
+    });
+
+    // Clic sur un visuel → lightbox plein écran (images ET vidéos, voir
+    // stripLbOpen) — sauf si ce "clic" est en fait la fin d'un glisser
+    // (dragMoved dépasse quelques pixels), sinon on ouvrirait la lightbox à
+    // chaque fin de drag, ou si l'item est une case placeholder (pas encore
+    // de média — voir .proj-strip-placeholder). La liste reflète l'ordre
+    // DOM réel de la piste — pas de duplication à maintenir à la main ;
+    // une entrée `null` marque un placeholder, jamais ouvert en lightbox.
+    const lbList = items.map(item => {
+      const m = item.querySelector('img, video');
+      if (!m) return null;
+      return { type: m.tagName.toLowerCase(), src: m.getAttribute('src') };
+    });
+    items.forEach((item, i) => {
+      item.addEventListener('click', () => {
+        if (dragMoved > 5) return;
+        if (!lbList[i]) return;
+        stripLbOpen(lbList, i);
+      });
+    });
+  }
+  initProjStrip('tapage');
+
+  // ── Cal Smith — feed Instagram fictif ─────────────────────────────────
+  // Clic sur une vignette de la grille → lightbox plein écran partagée
+  // (stripLbOpen, même composant que les bandes scroll horizontales).
+  function initCalSmithFeed() {
+    const cells = [...document.querySelectorAll('#page-calsmith .cs-ig-cell')];
+    if (!cells.length) return;
+    const lbList = cells.map(cell => {
+      const img = cell.querySelector('img');
+      return { type: 'img', src: img.getAttribute('src') };
+    });
+    cells.forEach((cell, i) => {
+      cell.addEventListener('click', () => stripLbOpen(lbList, i));
+    });
+  }
+  initCalSmithFeed();
+
+  // ── Vidéos longues (son) — badge "voir en plein écran" au survol ─────────
+  // Poster et animation + Cal Smith : ouvre la même lightbox partagée que les
+  // bandes scroll, mais avec son + contrôles natifs (voir stripLbShow, qui
+  // désactive muted/loop quand l'entrée passe muted:false).
+  function initVideoExpand() {
+    document.querySelectorAll('.mc-vid-expand').forEach(wrap => {
+      const video = wrap.querySelector('video');
+      if (!video) return;
+      wrap.addEventListener('click', () => {
+        stripLbOpen([{ type: 'video', src: video.getAttribute('src'), muted: false, loop: false }], 0);
+      });
+    });
+  }
+  initVideoExpand();
+
+  // ── Lightbox plein écran (images ET vidéos) — bande scroll horizontale ───
+  // Calquée sur le lightbox photo partagé (pgLb*) plus bas dans ce fichier,
+  // mais dédiée puisqu'elle doit aussi savoir lire une vidéo — pgLbImg est un
+  // simple <img>, incompatible avec les .mp4 des bandes scroll. Un <img> et
+  // un <video> coexistent dans le DOM, un seul affiché à la fois selon le
+  // type de l'entrée courante. Partagée par toutes les pages utilisant
+  // .proj-strip (une seule instance, comme pgLb* pour les galeries photo).
+  let stripLbEl    = null;
+  let stripLbImg   = null;
+  let stripLbVideo = null;
+  let stripLbPrev  = null;
+  let stripLbNext  = null;
+  let stripLbList  = [];
+  let stripLbIdx   = 0;
+
+  function stripLbBuild() {
+    stripLbEl = document.createElement('div');
+    stripLbEl.style.cssText = [
+      'position:fixed', 'inset:0', 'z-index:9700',
+      'background:rgba(0,0,0,0.94)',
+      'display:none', 'align-items:center', 'justify-content:center',
+      'cursor:zoom-out', 'opacity:0', 'transition:opacity 0.22s ease',
+    ].join(';');
+
+    const mediaCSS = [
+      'max-width:92vw', 'max-height:92vh', 'object-fit:contain', 'display:none',
+      'cursor:default', 'user-select:none', '-webkit-user-drag:none',
+      'transition:opacity 0.18s ease',
+    ].join(';');
+
+    stripLbImg = document.createElement('img');
+    stripLbImg.style.cssText = mediaCSS;
+    stripLbImg.addEventListener('click', e => e.stopPropagation());
+
+    stripLbVideo = document.createElement('video');
+    stripLbVideo.muted = true;
+    stripLbVideo.loop  = true;
+    stripLbVideo.setAttribute('playsinline', '');
+    stripLbVideo.style.cssText = mediaCSS;
+    stripLbVideo.addEventListener('click', e => e.stopPropagation());
+
+    const mkBtn = (css, html, fn) => {
+      const b = document.createElement('button');
+      b.innerHTML = html;
+      b.style.cssText = css + 'background:none;border:none;color:#fff;cursor:pointer;opacity:0.55;transition:opacity 0.2s;';
+      b.addEventListener('mouseenter', () => b.style.opacity = '1');
+      b.addEventListener('mouseleave', () => b.style.opacity = '0.55');
+      b.addEventListener('click', e => { e.stopPropagation(); fn(); });
+      return b;
+    };
+    stripLbPrev = mkBtn('position:absolute;left:20px;top:50%;transform:translateY(-50%);font-size:26px;padding:14px;', '&#8592;', () => stripLbNav(-1));
+    stripLbNext = mkBtn('position:absolute;right:20px;top:50%;transform:translateY(-50%);font-size:26px;padding:14px;', '&#8594;', () => stripLbNav(1));
+    const close = mkBtn('position:absolute;top:16px;right:22px;font-size:30px;padding:8px;line-height:1;', '&times;', stripLbClose);
+
+    stripLbEl.append(stripLbImg, stripLbVideo, stripLbPrev, stripLbNext, close);
+    stripLbEl.addEventListener('click', stripLbClose);
+    document.body.appendChild(stripLbEl);
+  }
+
+  function stripLbShow() {
+    const entry = stripLbList[stripLbIdx];
+    if (!entry) return;
+    if (entry.type === 'video') {
+      stripLbImg.style.display = 'none';
+      stripLbVideo.src = entry.src;
+      // Par défaut (bandes Tapage/Poster) : muet + boucle, comme en aperçu.
+      // Les vidéos longues ouvertes via initVideoExpand() passent muted:false
+      // pour garder le son et les contrôles natifs (pause/volume/scrub).
+      stripLbVideo.muted    = entry.muted !== false;
+      stripLbVideo.loop     = entry.loop  !== false;
+      stripLbVideo.controls = entry.muted === false;
+      stripLbVideo.style.display = 'block';
+      stripLbVideo.currentTime = 0;
+      stripLbVideo.play().catch(() => {});
+    } else {
+      stripLbVideo.pause();
+      stripLbVideo.removeAttribute('src');
+      stripLbVideo.style.display = 'none';
+      stripLbImg.src = entry.src;
+      stripLbImg.style.display = 'block';
+    }
+  }
+
+  function stripLbOpen(list, idx) {
+    stripLbList = list;
+    stripLbIdx  = idx;
+    if (!stripLbEl) stripLbBuild();
+    stripLbShow();
+    stripLbEl.style.display = 'flex';
+    stripLbEl.style.pointerEvents = 'auto';
+    // Un seul élément (ex : vidéo longue ouverte au clic) → pas de flèches
+    // prev/next inutiles.
+    const showNav = list.length > 1;
+    stripLbPrev.style.display = showNav ? '' : 'none';
+    stripLbNext.style.display = showNav ? '' : 'none';
+    requestAnimationFrame(() => requestAnimationFrame(() => stripLbEl.style.opacity = '1'));
+  }
+
+  function stripLbNav(dir) {
+    stripLbIdx = (stripLbIdx + dir + stripLbList.length) % stripLbList.length;
+    stripLbShow();
+  }
+
+  function stripLbClose() {
+    if (!stripLbEl) return;
+    stripLbEl.style.opacity = '0';
+    // Voir le commentaire équivalent dans pgLbClose() : coupe le clic
+    // immédiatement, sinon l'overlay invisible reste cliquable 230ms.
+    stripLbEl.style.pointerEvents = 'none';
+    setTimeout(() => {
+      if (!stripLbEl) return;
+      stripLbEl.style.display = 'none';
+      stripLbVideo.pause();
+    }, 230);
+  }
+
   // ── Carte flottante "projet suivant" — un projet au hasard, toutes pages projet ──
   // L'élément vit HORS de toute .page (au niveau racine du site, comme
   // #voyage-overlay etc.) pour ne jamais être piégé par un ancêtre .page qui
@@ -453,10 +772,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const PROJECTS = [
     { page: 'matiere',  img: 'mc-poster.jpg',       title: 'Matière Créative' },
     { page: 'stoxl',    img: 'From S to XL.jpg',    title: 'From S to XL' },
-    { page: 'tapage',   img: 'work-ringer.jpg',     title: 'Tapage' },
+    { page: 'tapage',   img: 'Tapage/Tapage valentines day.jpg', title: 'Tapage' },
     { page: 'palais',   img: 'Palais bulles.jpg',   title: 'Palais Bulles' },
     { page: 'calsmith', img: 'Cal Smith.jpg',       title: 'Cal Smith' },
-    { page: 'poster',   img: 'work-ringer.jpg',     title: 'Poster' },
+    { page: 'poster',   img: 'Poster et animation/a2.jpg', title: 'Poster et animation' },
   ];
 
   function hideFloatingNextNow() {
@@ -475,10 +794,14 @@ document.addEventListener('DOMContentLoaded', () => {
     el.style.transition = '';
   }
 
-  function pickRandomNextProject(currentPageId) {
+  function pickRandomNextProject(currentPageId, previousPageId) {
     const floatingNext = document.querySelector('.floating-next-project');
     if (!floatingNext) return;
-    const choices = PROJECTS.filter(p => p.page !== currentPageId);
+    // Exclut la page courante ET celle qu'on vient de quitter — sinon, en
+    // cliquant la carte depuis A vers B, elle pouvait immédiatement
+    // reproposer A (le projet qu'on venait tout juste de voir).
+    let choices = PROJECTS.filter(p => p.page !== currentPageId && p.page !== previousPageId);
+    if (!choices.length) choices = PROJECTS.filter(p => p.page !== currentPageId);
     const pick = choices[Math.floor(Math.random() * choices.length)];
     if (!pick) return;
     floatingNext.dataset.page = pick.page;
@@ -505,13 +828,17 @@ document.addEventListener('DOMContentLoaded', () => {
       // réelle de CHAQUE page.
       const maxScroll = pEl.scrollHeight - pEl.clientHeight;
       const progress  = maxScroll > 0 ? pEl.scrollTop / maxScroll : 0;
-      floatingNext.classList.toggle('is-visible', progress > 0.8);
+      // Seuil repoussé près du tout bas de la page (au lieu de 80%) : la
+      // carte gênait la lecture en arrivant trop tôt, alors qu'il restait
+      // encore du contenu de la page projet à lire.
+      floatingNext.classList.toggle('is-visible', progress > 0.94);
     }, { passive: true });
   });
 
   function navigateTo(target) {
     if (transitioning || target === current) return;
     transitioning = true;
+    const previousPage = current; // capturé avant que current ne change plus bas — sert à exclure ce projet de la prochaine suggestion de la carte flottante
 
     // Cache systématiquement la carte flottante, quelle que soit la page
     // quittée — jamais conditionnel, pour ne jamais risquer qu'elle reste
@@ -541,8 +868,20 @@ document.addEventListener('DOMContentLoaded', () => {
       onComplete: () => {
         document.body.classList.remove('is-transitioning');
         transitioning = false;
+        clearTimeout(navSafetyTimer);
       },
     });
+
+    // Filet de sécurité — si onComplete ne se déclenche jamais pour une
+    // raison imprévue (timeline interrompue, onglet mis en arrière-plan…),
+    // débloque quand même la navigation après un délai large plutôt que de
+    // laisser tous les boutons (retour compris) muets jusqu'au rechargement
+    // de la page. La timeline la plus longue du site ne dépasse pas ~1.6s.
+    clearTimeout(navSafetyTimer);
+    navSafetyTimer = setTimeout(() => {
+      document.body.classList.remove('is-transitioning');
+      transitioning = false;
+    }, 3000);
 
     // ① Exit — page courante glisse vers le bas et disparaît
     if (curPage) {
@@ -602,7 +941,7 @@ document.addEventListener('DOMContentLoaded', () => {
         initRevealGSAP(target);
         // Carte flottante "projet suivant" — nouveau projet aléatoire à chaque arrivée
         // (l'écouteur de scroll qui gère son affichage est permanent, voir plus haut)
-        if (projPages.has(target)) pickRandomNextProject(target);
+        if (projPages.has(target)) pickRandomNextProject(target, previousPage);
         if (target === 'work') setTimeout(() => {
           const el = document.querySelector('#work-scroll-hint .work-hint-line');
           if (el) scrambleLine(el, 'scroll ↑ ↓', 200);
@@ -835,10 +1174,12 @@ document.addEventListener('DOMContentLoaded', () => {
     applyStyles();
     requestAnimationFrame(() => { requestAnimationFrame(centerTrack); });
     window.addEventListener('resize', centerTrack);
+
+    return { reset: () => setActive(0) };
   }
 
   // Initialise les deux roulettes
-  initRoulette('work-roulette',  'work-track',  'work-img',  0);
+  const workRoulette = initRoulette('work-roulette',  'work-track',  'work-img',  0);
   initRoulette('photo-roulette', 'photo-track', 'photo-img', 0);
 
   // ── Back button (Ringer projet → Work) ───────────────────────────────────
@@ -868,6 +1209,19 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.mc-v').forEach(el => {
     el.classList.toggle('is-shown', el.dataset.version === 'fr');
   });
+
+  // Verrou partagé voyage/évènement/street : posé dès le clic qui déclenche
+  // la navigation (vGoToPage/eGoToPage/sGoToPage), avant même l'appel à
+  // navigateTo() — car ces fonctions attendent ~140ms (le temps du fondu de
+  // sortie des miniatures) avant d'appeler navigateTo(), et `transitioning`
+  // ne devient vrai qu'à CET appel. Pendant cette fenêtre de ~140ms, si la
+  // souris repasse sur un des trois libellés (Voyage/Évènement/Street) en
+  // route vers ailleurs, mouseenter relançait un scatter tout neuf — qui ne
+  // se faisait alors plus jamais nettoyer avant l'arrivée sur la nouvelle
+  // page. Ce verrou bloque tout nouveau scatter tant qu'une navigation
+  // photo est en cours ; il est relâché par hideAllPhotoScatterNow(),
+  // appelée sur chaque navigateTo().
+  let photoListLocked = false;
 
   // ── Voyage — scatter & gallery ────────────────────────────────────────────
   const VOYAGE_PHOTOS = [
@@ -1077,6 +1431,7 @@ document.addEventListener('DOMContentLoaded', () => {
     clearTimeout(vClearTimer);
     vEnterTimers.forEach(clearTimeout);
     vEnterTimers = [];
+    photoListLocked = true; // bloque tout re-scatter tant que la navigation n'est pas lancée
 
     if (voyageState === 'scatter') {
       vSetState('off'); // verrouillé tout de suite : plus aucun mouseleave ne peut interférer
@@ -1094,6 +1449,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (voyageItem && voyageOverlay) {
     voyageItem.addEventListener('mouseenter', () => {
+      if (photoListLocked || transitioning) return;
       clearTimeout(vLeaveTimer);
       clearTimeout(vClearTimer);
       if (eventState === 'scatter')  { clearTimeout(eLeaveTimer); eHideScatter(120, () => { eventOverlay.innerHTML = ''; eSetState('off'); }); }
@@ -1111,7 +1467,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     voyageItem.addEventListener('mouseleave', () => {
       if (voyageState === 'gallery' || voyageState === 'lightbox') return;
-      if (voyageState === 'scatter') vTriggerHide();
+      // Petit délai avant de lancer réellement la disparition : absorbe les
+      // micro-sorties/entrées involontaires (jitter trackpad près du bord du
+      // libellé) — mouseenter annule ce timer en premier geste, donc un vrai
+      // survol continu ne voit jamais ce délai. Sans ça, une sortie/entrée
+      // trop rapide pouvait laisser la disparition se terminer (état repassé
+      // à 'off') juste avant le ré-survol, qui relançait alors un scatter
+      // tout neuf — d'où l'impression que l'animation "se lance deux fois".
+      if (voyageState === 'scatter') {
+        clearTimeout(vLeaveTimer);
+        vLeaveTimer = setTimeout(vTriggerHide, 90);
+      }
     });
 
     voyageItem.addEventListener('click', e => {
@@ -1326,6 +1692,7 @@ document.addEventListener('DOMContentLoaded', () => {
     clearTimeout(eClearTimer);
     eEnterTimers.forEach(clearTimeout);
     eEnterTimers = [];
+    photoListLocked = true; // bloque tout re-scatter tant que la navigation n'est pas lancée
 
     if (eventState === 'scatter') {
       eSetState('off'); // verrouillé tout de suite : plus aucun mouseleave ne peut interférer
@@ -1343,6 +1710,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (eventItem && eventOverlay) {
     eventItem.addEventListener('mouseenter', () => {
+      if (photoListLocked || transitioning) return;
       clearTimeout(eLeaveTimer);
       clearTimeout(eClearTimer);
       if (voyageState === 'scatter') { clearTimeout(vLeaveTimer); vHideScatter(120, () => { voyageOverlay.innerHTML = ''; vSetState('off'); }); }
@@ -1360,7 +1728,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     eventItem.addEventListener('mouseleave', () => {
       if (eventState === 'gallery' || eventState === 'lightbox') return;
-      if (eventState === 'scatter') eTriggerHide();
+      // Voir le commentaire équivalent sur voyageItem.mouseleave.
+      if (eventState === 'scatter') {
+        clearTimeout(eLeaveTimer);
+        eLeaveTimer = setTimeout(eTriggerHide, 90);
+      }
     });
 
     eventItem.addEventListener('click', e => {
@@ -1482,6 +1854,7 @@ document.addEventListener('DOMContentLoaded', () => {
     clearTimeout(sClearTimer);
     sEnterTimers.forEach(clearTimeout);
     sEnterTimers = [];
+    photoListLocked = true; // bloque tout re-scatter tant que la navigation n'est pas lancée
 
     if (streetState === 'scatter') {
       sSetState('off'); // verrouillé tout de suite : plus aucun mouseleave ne peut interférer
@@ -1499,6 +1872,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (streetItem && streetOverlay) {
     streetItem.addEventListener('mouseenter', () => {
+      if (photoListLocked || transitioning) return;
       clearTimeout(sLeaveTimer);
       clearTimeout(sClearTimer);
       if (voyageState === 'scatter') { clearTimeout(vLeaveTimer); vHideScatter(120, () => { voyageOverlay.innerHTML = ''; vSetState('off'); }); }
@@ -1514,7 +1888,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     streetItem.addEventListener('mouseleave', () => {
-      if (streetState === 'scatter') sTriggerHide();
+      // Voir le commentaire équivalent sur voyageItem.mouseleave.
+      if (streetState === 'scatter') {
+        clearTimeout(sLeaveTimer);
+        sLeaveTimer = setTimeout(sTriggerHide, 90);
+      }
     });
 
     streetItem.addEventListener('click', e => {
@@ -1549,6 +1927,7 @@ document.addEventListener('DOMContentLoaded', () => {
     voyageState = 'off';
     eventState  = 'off';
     streetState = 'off';
+    photoListLocked = false;
 
     document.querySelectorAll('.photo-list-item').forEach(i => i.classList.remove('is-hovered'));
     document.querySelectorAll('.voyage-lightbox').forEach(lb => lb.remove());
@@ -1602,6 +1981,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!pgLbEl) pgLbBuild();
     pgLbImg.src = pgLbSrcs[pgLbIdx];
     pgLbEl.style.display = 'flex';
+    pgLbEl.style.pointerEvents = 'auto';
     requestAnimationFrame(() => requestAnimationFrame(() => pgLbEl.style.opacity = '1'));
   }
 
@@ -1614,6 +1994,11 @@ document.addEventListener('DOMContentLoaded', () => {
   function pgLbClose() {
     if (!pgLbEl) return;
     pgLbEl.style.opacity = '0';
+    // pointer-events coupé immédiatement — sinon l'overlay, invisible mais
+    // toujours display:flex pendant les 230ms de fondu, intercepte le clic
+    // suivant (ex: bouton retour "photo" juste en dessous) au lieu de le
+    // laisser passer, d'où le bug "le bouton ne répond pas parfois".
+    pgLbEl.style.pointerEvents = 'none';
     setTimeout(() => { if (pgLbEl) pgLbEl.style.display = 'none'; }, 230);
   }
 
@@ -1642,6 +2027,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.addEventListener('keydown', e => {
+    // Lightbox des bandes scroll horizontales (Tapage, Poster, ...)
+    if (stripLbEl && stripLbEl.style.display !== 'none' && stripLbEl.style.opacity !== '0') {
+      if (e.key === 'Escape')         { stripLbClose(); return; }
+      if (e.key === 'ArrowLeft')      { stripLbNav(-1); return; }
+      if (e.key === 'ArrowRight')     { stripLbNav(1);  return; }
+    }
     // Photo lightbox partagé
     if (pgLbEl && pgLbEl.style.display !== 'none' && pgLbEl.style.opacity !== '0') {
       if (e.key === 'Escape')         { pgLbClose(); return; }
@@ -1741,18 +2132,15 @@ document.addEventListener('DOMContentLoaded', () => {
       'tapage.tagline': 'Graphisme — Affiche',
       'palais.tagline': 'Direction artistique — Identité visuelle',
       'calsmith.tagline': 'Graphisme — Identité visuelle',
-      'poster.tagline': 'Graphisme — Sérigraphie',
+      'poster.tagline': 'Graphisme',
+      'poster.title': 'Poster et animation',
       'fiche.year': 'Année',
       'stoxl.type': 'Direction artistique', 'stoxl.discipline': 'Graphisme, Identité visuelle',
-      'tapage.type': 'Graphisme', 'tapage.discipline': 'Affiche, Typographie',
+      'tapage.type': 'Graphisme', 'tapage.discipline': 'Affiche, Typographie, Photographie, Motion design',
       'palais.type': 'Direction artistique', 'palais.discipline': 'Identité visuelle, Photographie',
-      'calsmith.type': 'Graphisme', 'calsmith.discipline': 'Identité visuelle, Musique',
-      'poster.type': 'Graphisme', 'poster.discipline': 'Sérigraphie, Affiche',
+      'calsmith.type': 'Graphisme', 'calsmith.discipline': 'Identité visuelle, Réseaux sociaux',
+      'poster.type': 'Graphisme', 'poster.discipline': 'Graphisme',
       'fun.btn': 'Amusement', 'fun.cta': 'Cliquez ici et amusez-vous',
-      'hero.gd': 'Design graphique', 'hero.ad': 'Direction artistique',
-      'hero.by': 'par Noah Lesage',
-      'hero.ka': 'Animation cinétique', 'hero.ph': 'Photographie',
-      'hero.cta': 'Voir mon travail →',
     },
     en: {
       'hello.1': 'A project?', 'hello.2': 'A need?', 'hello.3': "Let's talk.",
@@ -1767,18 +2155,15 @@ document.addEventListener('DOMContentLoaded', () => {
       'tapage.tagline': 'Graphic design — Poster',
       'palais.tagline': 'Art direction — Visual identity',
       'calsmith.tagline': 'Graphic design — Visual identity',
-      'poster.tagline': 'Graphic design — Screen printing',
+      'poster.tagline': 'Graphic design',
+      'poster.title': 'Poster and animation',
       'fiche.year': 'Year',
       'stoxl.type': 'Art direction', 'stoxl.discipline': 'Graphic design, Visual identity',
-      'tapage.type': 'Graphic design', 'tapage.discipline': 'Poster, Typography',
+      'tapage.type': 'Graphic design', 'tapage.discipline': 'Poster, Typography, Photography, Motion design',
       'palais.type': 'Art direction', 'palais.discipline': 'Visual identity, Photography',
-      'calsmith.type': 'Graphic design', 'calsmith.discipline': 'Visual identity, Music',
-      'poster.type': 'Graphic design', 'poster.discipline': 'Screen printing, Poster',
+      'calsmith.type': 'Graphic design', 'calsmith.discipline': 'Visual identity, Social media',
+      'poster.type': 'Graphic design', 'poster.discipline': 'Graphic design',
       'fun.btn': 'Playground', 'fun.cta': 'Click here and have fun',
-      'hero.gd': 'Graphic design', 'hero.ad': 'Artistic direction',
-      'hero.by': 'by Noah Lesage',
-      'hero.ka': 'Kinetic animation', 'hero.ph': 'Photography',
-      'hero.cta': 'See my work →',
     }
   };
 

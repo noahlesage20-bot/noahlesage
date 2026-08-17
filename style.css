@@ -110,7 +110,7 @@ img, video {
 #cursor-dot.is-view {
   width: 82px;
   height: 82px;
-  background: var(--cream);
+  background: var(--yellow);
   mix-blend-mode: normal;
 }
 
@@ -867,14 +867,35 @@ img, video {
 }
 
 .photo-list-item {
+  /* Référence unique pour la taille du libellé : reprise par .photo-list-name
+     (font-size) ET par ::before (zone de survol) pour qu'ils restent toujours
+     proportionnels l'un à l'autre, y compris aux breakpoints mobiles où seule
+     cette variable est redéfinie (voir plus bas). */
+  --pl-size: clamp(52px, 9.5vw, 142px);
+  position: relative;
   cursor: pointer;
   padding: 0.08em 0;
   text-align: center;
 }
 
+/* Zone de survol/clic invisible, nettement plus généreuse que la boîte de
+   texte réelle (calée sur --pl-size, pas sur un em minuscule hérité du
+   parent — l'ancienne version calculait son débord en em du conteneur, donc
+   quasi nulle vu que .photo-list-item n'a pas de font-size propre). Comble
+   le débord des majuscules accentuées (le É de "Évènement") au-dessus de sa
+   boîte de ligne (line-height serré à 0.92), et rend tout le libellé
+   survolable de façon fiable, plutôt que seulement la boîte de texte stricte.
+   Hors flux (position:absolute) : n'affecte ni l'espacement visuel entre les
+   libellés ni leur mise en page. */
+.photo-list-item::before {
+  content: '';
+  position: absolute;
+  inset: calc(var(--pl-size) * -0.06) 0;
+}
+
 .photo-list-name {
   display: block;
-  font-size: clamp(52px, 9.5vw, 142px);
+  font-size: var(--pl-size);
   font-weight: 400;
   letter-spacing: -0.035em;
   line-height: 0.92;
@@ -1095,15 +1116,19 @@ a.hello-info-link:hover { opacity: 0.38; }
 ========================================== */
 
 /* Masque de reveal typographique ligne par ligne (voir wrapMaskLines() dans script.js).
-   padding-top + margin-top négatif égal : agrandit la boîte de masquage vers
-   le haut sans déplacer visuellement le texte, pour laisser respirer les
-   accents des majuscules (É, À...) que le line-height serré (0.92) coupait
-   sinon net contre le bord de l'overflow:hidden. */
+   padding + margin négatif égal (haut ET bas) : agrandit la boîte de
+   masquage sans déplacer visuellement le texte. En haut, pour laisser
+   respirer les accents/majuscules (É, À...) que le line-height serré (0.92)
+   coupait contre le bord de l'overflow:hidden. En bas, pour les jambages
+   descendants (p, g, j, q...) — ex : les deux "p"/"g" de "Tapage" se
+   faisaient couper en bas, pas en haut comme initialement diagnostiqué. */
 .gsap-line {
   display: block;
   overflow: hidden;
-  padding-top: 0.2em;
-  margin-top: -0.2em;
+  padding-top: 0.34em;
+  margin-top: -0.34em;
+  padding-bottom: 0.22em;
+  margin-bottom: -0.22em;
 }
 .gsap-line-inner {
   display: block;
@@ -1303,7 +1328,7 @@ div.mc-v.is-shown   { display: block; }
 .mc-proj-img video {
   width: 100%;
   height: 58vh;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
   transition: transform 1.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -1328,6 +1353,105 @@ div.mc-v.is-shown   { display: block; }
 .mc-proj-img:nth-child(6n+4) { width: 60%;  margin: 0 0 0 auto; }
 .mc-proj-img:nth-child(6n+5) { width: 90%;  margin: 0 auto; }
 .mc-proj-img:nth-child(6n+6) { width: 75%;  margin: 0 0 0 auto; }
+
+/* ── Cal Smith — 3 images générées côte à côte, portrait Cal Smith.jpg
+   recadré en bandeau horizontal en dessous. .cs-trio n'est pas concerné par
+   les règles nth-child ci-dessus (ses enfants ne sont plus des enfants
+   directs de .mc-proj-right), donc pas d'override à annuler. */
+.cs-trio {
+  display: flex;
+  gap: clamp(10px, 1.4vw, 22px);
+  width: 100%;
+}
+
+.cs-trio .mc-proj-img {
+  flex: 1;
+  width: auto;
+  margin: 0;
+}
+
+.cs-trio .mc-proj-img img,
+.cs-trio .mc-proj-img video {
+  height: 38vh;
+}
+
+.mc-proj-img.cs-horizontal {
+  width: 100%;
+  margin: 0;
+}
+
+.mc-proj-img.cs-horizontal img {
+  height: 46vh;
+  width: 100%;
+  object-fit: cover; /* portrait recadré en bandeau large, volontairement — voir demande "en horizontal" */
+}
+
+/* ── Palais Bulles — animation mp4 agrandie ──────────────────────── */
+.mc-proj-img.pb-video {
+  width: 100%;
+  margin: 0;
+}
+
+.mc-proj-img.pb-video video {
+  height: auto;
+  max-height: 88vh;
+  width: 100%;
+}
+
+/* Vidéos longues (Poster) agrandies en pleine largeur — même traitement que
+   .pb-video ci-dessus, pour qu'elles se remarquent davantage que les
+   animations muettes du duo .cs-trio au-dessus. */
+.mc-proj-img.mc-vid-full {
+  width: 100%;
+  margin: 0;
+}
+
+.mc-proj-img.mc-vid-full video {
+  height: auto;
+  max-height: 85vh;
+  width: 100%;
+}
+
+/* Mockup MacBook cliquable — même taille que Totebag+chaise copie.jpg
+   (nth-child(6n+5), width:90%/margin:auto), badge "voir le site" visible
+   au survol uniquement sur cette photo (scope via .pb-link, pas de règle
+   générique sur .mc-proj-img). */
+.mc-proj-img.pb-link {
+  width: 90%;
+  margin: 0 auto;
+}
+
+.pb-link a {
+  position: relative;
+  display: block;
+}
+
+/* Vidéos longues (son) — survol affiche un badge "voir en plein écran" qui
+   ouvre la vidéo dans la lightbox partagée (stripLbOpen), en pleine page
+   plutôt qu'en plein écran système. Voir initVideoExpand() dans script.js.
+   Partage la même apparence de badge que .pb-link-badge (Palais Bulles). */
+.mc-vid-expand { position: relative; cursor: pointer; }
+
+.pb-link-badge,
+.mc-vid-expand-badge {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(10, 10, 10, 0.45);
+  color: #ffffff;
+  font-size: clamp(14px, 1.4vw, 20px);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  opacity: 0;
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.pb-link:hover .pb-link-badge,
+.mc-vid-expand:hover .mc-vid-expand-badge { opacity: 1; }
 
 
 /* ── Panneau gauche ──────────────────────── */
@@ -1485,6 +1609,419 @@ div.mc-v.is-shown   { display: block; }
   font-weight: 400;
   color: var(--black);
   line-height: 1.4;
+}
+
+/* ── Cal Smith — feed Instagram fictif ────────────────────────────────────
+   Mockup de profil complet (avatar/stats, bio, boutons, stories à la une,
+   grille 3×3), largeur calée sur celle d'un profil Instagram desktop
+   classique, centrée dans la page. Couleurs volontairement proches des
+   vraies conventions Instagram (bleu lien vérifié/CTA, gris secondaire)
+   plutôt que la palette du site — c'est un mockup du livrable, pas une
+   section éditoriale du portfolio. */
+.cs-instagram {
+  max-width: 420px;
+  margin: 0;
+  padding: 0 0 4vw;
+}
+
+.cs-ig-top {
+  display: flex;
+  align-items: center;
+  gap: clamp(20px, 4vw, 36px);
+  margin-bottom: 16px;
+}
+
+.cs-ig-avatar {
+  width: 84px;
+  height: 84px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.cs-ig-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cs-ig-stats-row {
+  display: flex;
+  flex: 1;
+  justify-content: space-between;
+}
+
+.cs-ig-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.cs-ig-stat strong {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.cs-ig-stat span {
+  font-size: 12.5px;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.cs-ig-bio {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 16px;
+}
+
+.cs-ig-name {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.cs-ig-badge { flex-shrink: 0; }
+
+.cs-ig-role {
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.55);
+  margin-bottom: 4px;
+}
+
+.cs-ig-bio-text {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.cs-ig-translate {
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.55);
+  margin-top: 4px;
+}
+
+.cs-ig-link {
+  font-size: 14px;
+  font-weight: 600;
+  color: #00376b;
+  margin-top: 2px;
+}
+
+.cs-ig-actions {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.cs-ig-btn {
+  flex: 1;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  background: transparent;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--black);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.2s ease;
+}
+
+.cs-ig-btn:hover { opacity: 0.7; }
+
+.cs-ig-btn--follow {
+  flex: 1.3;
+  background: #0095F6;
+  border-color: #0095F6;
+  color: #fff;
+}
+
+.cs-ig-btn--icon {
+  flex: 0 0 auto;
+  width: 34px;
+  padding: 7px 0;
+}
+
+.cs-ig-highlights {
+  display: flex;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.cs-ig-highlight {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.cs-ig-highlight-circle {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  padding: 2px;
+  background: linear-gradient(135deg, #f9ce34, #ee2a7b 55%, #6228d7);
+}
+
+.cs-ig-highlight-circle img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  border: 2px solid var(--white);
+}
+
+.cs-ig-highlight span {
+  font-size: 11.5px;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.cs-ig-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  padding-top: 3px;
+}
+
+.cs-ig-cell {
+  aspect-ratio: 1;
+  overflow: hidden;
+  cursor: zoom-in;
+}
+
+.cs-ig-cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cs-ig-cell:hover img {
+  transform: scale(1.05);
+}
+
+@media (max-width: 768px) {
+  .cs-instagram { max-width: 100%; }
+  .cs-ig-avatar { width: 70px; height: 70px; }
+  .cs-ig-actions { flex-wrap: wrap; }
+  .cs-ig-btn { flex: 1 1 40%; }
+}
+
+/* ── Cal Smith — charte graphique (couleurs + typographie) ────────────────
+   Nichée dans le panneau titre gauche (.cs-meta-brand), juste sous la
+   ligne discipline "Identité visuelle, Réseaux sociaux" — panneau sticky
+   contraint en hauteur, donc gabarit compact (swatches et spécimen
+   typo réduits par rapport à un ancien format autonome pleine largeur).
+   Couleurs empilées au-dessus de la typographie. Pas de fichier "PP Mori
+   Black" chargé sur le site (seuls Regular/Semibold existent, voir
+   @font-face en tête de fichier) — la ligne "Black" force un font-weight
+   au-delà de ce qui est disponible : le navigateur synthétise un rendu plus
+   gras (gras "faux"), suffisant pour un aperçu de charte. */
+.cs-meta-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.cs-brand-left {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cs-brand-colors {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cs-swatch {
+  height: clamp(26px, 2.2vw, 36px);
+  border-radius: 5px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 0 10px;
+}
+
+.cs-swatch--white  { background: #ffffff; color: #0a0a0a; }
+.cs-swatch--black  { background: #0a0a0a; color: #ffffff; border-color: transparent; }
+.cs-swatch--red    { background: #e8262a; color: #ffffff; border-color: transparent; }
+.cs-swatch--pink   { background: #f5d6da; color: #0a0a0a; }
+.cs-swatch--blue   { background: #b4cefb; color: #0a0a0a; }
+.cs-swatch--yellow { background: #f7ff9d; color: #0a0a0a; }
+
+.cs-swatch-name {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.cs-swatch-hex {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.65;
+}
+
+.cs-brand-type {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.cs-type-note {
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.4);
+  margin-bottom: 2px;
+}
+
+.cs-type-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-size: clamp(15px, 1.3vw, 20px);
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  color: var(--black);
+}
+
+.cs-type-row--regular  { font-weight: 400; }
+.cs-type-row--semibold { font-weight: 600; }
+.cs-type-row--black    { font-weight: 800; }
+
+.cs-type-label {
+  flex-shrink: 0;
+  width: 58px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.4);
+}
+
+/* ── Pages projet "bande scroll" (Tapage, ...) — pas de colonne image en
+   haut (déplacée dans la bande, voir plus bas) : largeur 40% conservée
+   (comme .mc-proj-left partout ailleurs) pour que le panneau info reste
+   aligné avec .mc-desc-left/.mc-quote juste en dessous — seuls
+   position/height changent (plus rien à scroller à côté, donc pas besoin de
+   sticky ni de forcer 100vh). Poster n'en fait plus partie depuis le passage
+   à une galerie pleine page classique (.mc-proj-right). */
+#page-tapage .mc-proj-left {
+  position: static;
+  height: auto;
+  padding-bottom: 3vw;
+}
+
+/* ── Bande scroll horizontale (fond noir) — composant réutilisable par
+   n'importe quelle page projet (voir initProjStrip(pageId) dans script.js).
+   Calée entre les mêmes marges que le header (logo / nav), PAS pleine
+   largeur — voir margin ci-dessous. Hauteur fixe, AUCUN lien avec le scroll
+   de la page (descendre la page ne bouge jamais les visuels) : le
+   panoramique ne réagit qu'à la molette/au trackpad OU au cliquer-glisser
+   fait directement dans la case (écouteurs wheel + mousedown/mousemove avec
+   preventDefault posés sur .proj-strip dans script.js), lissé par une
+   boucle requestAnimationFrame. Le panoramique va de gauche à droite (voir
+   l'ordre DOM inversé des items dans index.html). Sur mobile, on retombe
+   sur un simple scroll horizontal natif au doigt. */
+.proj-strip {
+  position: relative;
+  z-index: 2;
+  /* flex-shrink:0 — LA vraie cause du bug "la case a disparu" sur Tapage :
+     .page est un conteneur flex (column) et .proj-strip a overflow:hidden,
+     ce qui désactive sa protection normale contre le rétrécissement
+     flexbox (min-height:auto). Résultat : dès que le contenu total de la
+     page dépassait la hauteur visible, le moteur flexbox écrasait cette
+     boîte à 0px de haut au lieu de simplement laisser .page déborder/
+     scroller. Même correctif déjà en place sur .mc-proj-img plus haut. */
+  flex-shrink: 0;
+  margin: 0 var(--pad);
+  height: 78vh;
+  overflow: hidden;
+  background: #0a0a0a;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  cursor: grab;
+}
+
+.proj-strip:active {
+  cursor: grabbing;
+}
+
+.proj-strip-track {
+  display: flex;
+  align-items: center;
+  gap: clamp(14px, 1.8vw, 36px);
+  padding: 0 5vw;
+  will-change: transform;
+  /* Pas de transition ici : le lissage est fait frame par frame en JS
+     (requestAnimationFrame, voir initProjStrip) — une transition CSS en
+     plus créerait un double amortissement (effet "élastique" mou). */
+}
+
+.proj-strip-item {
+  flex-shrink: 0;
+  height: 58vh;
+  display: flex;
+  align-items: center;
+  cursor: zoom-in;
+}
+
+.proj-strip-item img,
+.proj-strip-item video {
+  height: 78%;
+  width: auto;
+  max-width: 50vw;
+  object-fit: contain;
+  display: block;
+  border-radius: 6px;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none; /* le drag/clic est géré par .proj-strip-item, pas par le média lui-même (évite le drag natif d'image) */
+}
+
+.proj-strip-item:hover img,
+.proj-strip-item:hover video {
+  transform: scale(1.045);
+}
+
+@media (max-width: 900px) {
+  #page-tapage .mc-proj-left {
+    padding-bottom: 6vw;
+  }
+
+  .proj-strip {
+    height: 54vh;
+    margin: 0 var(--pad);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    cursor: auto;
+  }
+  .proj-strip-track {
+    padding: 0 5vw;
+  }
+  .proj-strip-item {
+    height: 100%;
+    scroll-snap-align: center;
+  }
+  .proj-strip-item img,
+  .proj-strip-item video {
+    max-width: 78vw;
+    pointer-events: auto;
+  }
 }
 
 /* ── Carte flottante "projet suivant" — surcouche UI fixe, toutes pages projet ──
@@ -1669,9 +2206,8 @@ div.mc-v.is-shown   { display: block; }
     justify-content: flex-start;
     gap: 0;
   }
-  .photo-list-item { padding: 0.1em 0; }
+  .photo-list-item { --pl-size: clamp(38px, 14vw, 70px); padding: 0.1em 0; }
   .photo-list-name {
-    font-size: clamp(38px, 14vw, 70px);
     text-align: left;
     line-height: 0.95;
   }
@@ -1716,6 +2252,14 @@ div.mc-v.is-shown   { display: block; }
   }
   .mc-proj-img img,
   .mc-proj-img video {
+    height: 75vw;
+  }
+
+  /* Duos/trios (Cal Smith, animations Poster) — empilés au lieu de
+     rétrécis côte à côte sur un écran étroit */
+  .cs-trio { flex-direction: column; }
+  .cs-trio .mc-proj-img img,
+  .cs-trio .mc-proj-img video {
     height: 75vw;
   }
 
@@ -1976,7 +2520,7 @@ div.mc-v.is-shown   { display: block; }
   .logo            { font-size: clamp(16px, 6.5vw, 26px); }
   #main-nav a      { font-size: clamp(10px, 3.2vw, 12px); gap: 3vw; }
   .proj-title      { font-size: clamp(24px, 9vw, 44px); }
-  .photo-list-name { font-size: clamp(34px, 13.5vw, 56px); }
+  .photo-list-item { --pl-size: clamp(34px, 13.5vw, 56px); }
   .mc-split-title  { font-size: clamp(28px, 10.5vw, 46px); }
   .proj-roulette   { width: calc(80% - var(--pad)); }
 }
