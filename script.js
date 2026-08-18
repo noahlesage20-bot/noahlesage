@@ -1119,18 +1119,15 @@ document.addEventListener('DOMContentLoaded', () => {
       setActive(activeIdx + (e.deltaY > 0 ? 1 : -1));
     }, { passive: false });
 
-    // Touch roulette — preventDefault pour ne pas scroller la page
-    let touchY = 0;
-    roulette.addEventListener('touchstart', e => {
-      touchY = e.touches[0].clientY;
-    }, { passive: true });
-    roulette.addEventListener('touchmove', e => {
-      e.preventDefault(); // bloque le scroll vertical de la page quand on swipe la roulette
-    }, { passive: false });
-    roulette.addEventListener('touchend', e => {
-      const diff = touchY - e.changedTouches[0].clientY;
-      if (Math.abs(diff) > 20) setActive(activeIdx + (diff > 0 ? 1 : -1));
-    }, { passive: true });
+    // Pas de swipe tactile vertical sur la roulette : ce geste est
+    // exactement celui du scroll de la page (la roulette occupe une bonne
+    // partie de l'écran en bas de la page Work), donc bloquer touchmove ici
+    // pour faire défiler les projets empêchait aussi de scroller la page —
+    // impossible à deviner pour l'utilisateur, qui se retrouvait coincé s'il
+    // posait le doigt sur la roulette. Au tactile, on parcourt la roulette
+    // au tap (déjà géré plus bas) plutôt qu'au swipe ; la molette desktop
+    // et le swipe horizontal de l'image (voir imgWrap plus bas, qui lui ne
+    // bloque jamais le scroll) restent inchangés.
 
     // Click: inactive → activate; active + data-page → navigate
     items.forEach((item, i) => {

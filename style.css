@@ -305,6 +305,7 @@ img, video {
   flex-direction: column;
   overflow-x: hidden;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
   padding-bottom: 300px;
 }
