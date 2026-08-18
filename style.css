@@ -2190,7 +2190,10 @@ div.mc-v.is-shown   { display: block; }
   }
   .gallery-img-wrap {
     width: 100%;
-    /* Swipe horizontal autorisé, scroll vertical bloqué sur l'image */
+    /* Le scroll vertical natif est volontairement coupé sur l'image : swiper
+       dessus (horizontal OU vertical) change de projet plutôt que de faire
+       défiler la page — voir imgWrap dans script.js. Scroller la page reste
+       possible depuis la roulette juste en dessous (voir .proj-roulette). */
     touch-action: pan-x pinch-zoom;
   }
 
@@ -2205,13 +2208,14 @@ div.mc-v.is-shown   { display: block; }
     z-index: 1;
   }
 
-  /* Roulette : zone tactile généreuse, ne scroll plus la page */
+  /* Roulette : zone tactile généreuse. Plus de swipe géré en JS ici (voir
+     script.js) — touch-action reste donc en pan-y par défaut pour que le
+     doigt puisse scroller normalement la page depuis cette zone. */
   .proj-roulette {
     width: calc(72% - var(--pad));
     height: 200px;
     bottom: calc(var(--pad) + 2vw);
     z-index: 2;
-    touch-action: none; /* gestion manuelle dans le JS */
     -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%);
     mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%);
   }

@@ -1155,7 +1155,10 @@ document.addEventListener('DOMContentLoaded', () => {
         setActive(activeIdx + (e.deltaY > 0 ? 1 : -1));
       }, { passive: false });
 
-      // Swipe gauche/droite sur l'image pour mobile
+      // Swipe sur l'image pour mobile — horizontal OU vertical change de
+      // projet (le scroll vertical natif y est coupé via touch-action en
+      // CSS, voir .gallery-img-wrap) ; scroller la page reste possible
+      // depuis la roulette juste en dessous, qui elle n'intercepte plus rien.
       let swipeX0 = 0, swipeY0 = 0;
       imgWrap.addEventListener('touchstart', e => {
         swipeX0 = e.touches[0].clientX;
@@ -1164,12 +1167,14 @@ document.addEventListener('DOMContentLoaded', () => {
       imgWrap.addEventListener('touchend', e => {
         const dx = swipeX0 - e.changedTouches[0].clientX;
         const dy = swipeY0 - e.changedTouches[0].clientY;
-        // Ne réagit que si le geste est majoritairement horizontal
+        const now = Date.now();
+        if (now - lastWheel < 380) return;
         if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-          const now = Date.now();
-          if (now - lastWheel < 380) return;
           lastWheel = now;
           setActive(activeIdx + (dx > 0 ? 1 : -1));
+        } else if (Math.abs(dy) > 40 && Math.abs(dy) > Math.abs(dx) * 1.5) {
+          lastWheel = now;
+          setActive(activeIdx + (dy > 0 ? 1 : -1));
         }
       }, { passive: true });
     }
