@@ -129,8 +129,10 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ── Loader = Orbit ───────────────────────────────────────────────────────
-  const O_SRCS  = ['mc-poster.jpg', 'From S to XL anim.mp4', 'Palais bulles.jpg', 'Cal Smith.jpg', 'Poster et animation/a2.jpg', './Tapage/Publi TAPAGE 19:12.mp4'];
-  const O_TILTS = [-8, 12, -4, 9, -13, 6];
+  // Ordre aligné sur la roulette Work : Matière Créative, From S to XL,
+  // Tapage, Palais Bulles, Pelago, Cal Smith, Poster et animation.
+  const O_SRCS  = ['mc-poster.jpg', 'From S to XL anim.mp4', './Tapage/Publi TAPAGE 19:12.mp4', 'Palais bulles.jpg', 'Pelago/Affiche_teasing3.jpg', 'Cal Smith.jpg', 'Poster et animation/a2.jpg'];
+  const O_TILTS = [-8, 12, -4, 9, -13, 6, -10];
   O_SRCS.forEach(src => { const i = new Image(); i.src = src; });
 
   const O_VW = window.innerWidth, O_VH = window.innerHeight;
@@ -351,7 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  const projPages     = new Set(['matiere','stoxl','tapage','palais','calsmith','poster']);
+  const projPages     = new Set(['matiere','stoxl','tapage','palais','calsmith','poster','pelago']);
   const photoSubPages = new Set(['photo-event','photo-street','photo-voyage']);
   const siteHeader    = document.getElementById('header');
   const pageTitles = {
@@ -359,14 +361,14 @@ document.addEventListener('DOMContentLoaded', () => {
     hello: 'Contact — Ringer Studio.', matiere: 'Matière Créative — Ringer Studio.',
     stoxl: 'From S to XL — Ringer Studio.', tapage: 'Tapage — Ringer Studio.',
     palais: 'Palais Bulles — Ringer Studio.', calsmith: 'Cal Smith — Ringer Studio.',
-    poster: 'Poster — Ringer Studio.',
+    poster: 'Poster — Ringer Studio.', pelago: 'Pelago — Ringer Studio.',
     'photo-event': 'Évènement — Ringer Studio.',
     'photo-street': 'Street — Ringer Studio.',
     'photo-voyage': 'Voyage — Ringer Studio.',
   };
 
   function updateNavActive(target) {
-    const workPages  = ['work','matiere','stoxl','tapage','palais','calsmith','poster'];
+    const workPages  = ['work','matiere','stoxl','tapage','palais','calsmith','poster','pelago'];
     const photoPages = ['photo','photo-event','photo-street','photo-voyage'];
     const mainTarget = workPages.includes(target) ? 'work'
                      : photoPages.includes(target) ? 'photo'
@@ -776,6 +778,7 @@ document.addEventListener('DOMContentLoaded', () => {
     { page: 'palais',   img: 'Palais bulles.jpg',   title: 'Palais Bulles' },
     { page: 'calsmith', img: 'Cal Smith.jpg',       title: 'Cal Smith' },
     { page: 'poster',   img: 'Poster et animation/a2.jpg', title: 'Poster et animation' },
+    { page: 'pelago',   img: 'Pelago/Affiche_1.jpg', title: 'Pelago' },
   ];
 
   function hideFloatingNextNow() {
@@ -1223,6 +1226,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // appelée sur chaque navigateTo().
   let photoListLocked = false;
 
+  // Écrans tactiles (pas de vrai survol) : le mouseenter/mouseleave des
+  // libellés Voyage/Évènement/Street ne sert alors à rien — pire, le tap
+  // synthétise souvent un mouseenter juste avant le click, ce qui déclenchait
+  // un flash de scatter inutile juste avant de naviguer. Sur ces appareils on
+  // n'attache que le click : tap = navigation directe, sans détour.
+  const CAN_HOVER = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
   // ── Voyage — scatter & gallery ────────────────────────────────────────────
   const VOYAGE_PHOTOS = [
     'Voyage/DSCF0929.JPG','Voyage/DSCF0931.JPG','Voyage/DSCF0932.JPG',
@@ -1448,37 +1458,39 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (voyageItem && voyageOverlay) {
-    voyageItem.addEventListener('mouseenter', () => {
-      if (photoListLocked || transitioning) return;
-      clearTimeout(vLeaveTimer);
-      clearTimeout(vClearTimer);
-      if (eventState === 'scatter')  { clearTimeout(eLeaveTimer); eHideScatter(120, () => { eventOverlay.innerHTML = ''; eSetState('off'); }); }
-      if (streetState === 'scatter') { clearTimeout(sLeaveTimer); sHideScatter(120, () => { streetOverlay.innerHTML = ''; sSetState('off'); }); }
-      if (voyageState === 'gallery' || voyageState === 'lightbox') return;
-      document.querySelectorAll('.photo-list-item').forEach(i =>
-        i.classList.toggle('is-hovered', i === voyageItem)
-      );
-      // Ré-entrée rapide pendant que le fondu de sortie précédent tournait
-      // encore (l'état n'a pas eu le temps de repasser à 'off') : on remet
-      // les photos déjà présentes à pleine opacité plutôt que d'ignorer ce survol.
-      if (voyageState === 'scatter') { vRestoreScatter(); return; }
-      vScatter();
-    });
-
-    voyageItem.addEventListener('mouseleave', () => {
-      if (voyageState === 'gallery' || voyageState === 'lightbox') return;
-      // Petit délai avant de lancer réellement la disparition : absorbe les
-      // micro-sorties/entrées involontaires (jitter trackpad près du bord du
-      // libellé) — mouseenter annule ce timer en premier geste, donc un vrai
-      // survol continu ne voit jamais ce délai. Sans ça, une sortie/entrée
-      // trop rapide pouvait laisser la disparition se terminer (état repassé
-      // à 'off') juste avant le ré-survol, qui relançait alors un scatter
-      // tout neuf — d'où l'impression que l'animation "se lance deux fois".
-      if (voyageState === 'scatter') {
+    if (CAN_HOVER) {
+      voyageItem.addEventListener('mouseenter', () => {
+        if (photoListLocked || transitioning) return;
         clearTimeout(vLeaveTimer);
-        vLeaveTimer = setTimeout(vTriggerHide, 90);
-      }
-    });
+        clearTimeout(vClearTimer);
+        if (eventState === 'scatter')  { clearTimeout(eLeaveTimer); eHideScatter(120, () => { eventOverlay.innerHTML = ''; eSetState('off'); }); }
+        if (streetState === 'scatter') { clearTimeout(sLeaveTimer); sHideScatter(120, () => { streetOverlay.innerHTML = ''; sSetState('off'); }); }
+        if (voyageState === 'gallery' || voyageState === 'lightbox') return;
+        document.querySelectorAll('.photo-list-item').forEach(i =>
+          i.classList.toggle('is-hovered', i === voyageItem)
+        );
+        // Ré-entrée rapide pendant que le fondu de sortie précédent tournait
+        // encore (l'état n'a pas eu le temps de repasser à 'off') : on remet
+        // les photos déjà présentes à pleine opacité plutôt que d'ignorer ce survol.
+        if (voyageState === 'scatter') { vRestoreScatter(); return; }
+        vScatter();
+      });
+
+      voyageItem.addEventListener('mouseleave', () => {
+        if (voyageState === 'gallery' || voyageState === 'lightbox') return;
+        // Petit délai avant de lancer réellement la disparition : absorbe les
+        // micro-sorties/entrées involontaires (jitter trackpad près du bord du
+        // libellé) — mouseenter annule ce timer en premier geste, donc un vrai
+        // survol continu ne voit jamais ce délai. Sans ça, une sortie/entrée
+        // trop rapide pouvait laisser la disparition se terminer (état repassé
+        // à 'off') juste avant le ré-survol, qui relançait alors un scatter
+        // tout neuf — d'où l'impression que l'animation "se lance deux fois".
+        if (voyageState === 'scatter') {
+          clearTimeout(vLeaveTimer);
+          vLeaveTimer = setTimeout(vTriggerHide, 90);
+        }
+      });
+    }
 
     voyageItem.addEventListener('click', e => {
       e.stopPropagation();
@@ -1709,31 +1721,33 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (eventItem && eventOverlay) {
-    eventItem.addEventListener('mouseenter', () => {
-      if (photoListLocked || transitioning) return;
-      clearTimeout(eLeaveTimer);
-      clearTimeout(eClearTimer);
-      if (voyageState === 'scatter') { clearTimeout(vLeaveTimer); vHideScatter(120, () => { voyageOverlay.innerHTML = ''; vSetState('off'); }); }
-      if (streetState === 'scatter') { clearTimeout(sLeaveTimer); sHideScatter(120, () => { streetOverlay.innerHTML = ''; sSetState('off'); }); }
-      if (eventState === 'gallery' || eventState === 'lightbox') return;
-      document.querySelectorAll('.photo-list-item').forEach(i =>
-        i.classList.toggle('is-hovered', i === eventItem)
-      );
-      // Ré-entrée rapide pendant que le fondu de sortie précédent tournait
-      // encore (l'état n'a pas eu le temps de repasser à 'off') : on remet
-      // les photos déjà présentes à pleine opacité plutôt que d'ignorer ce survol.
-      if (eventState === 'scatter') { eRestoreScatter(); return; }
-      eScatter();
-    });
-
-    eventItem.addEventListener('mouseleave', () => {
-      if (eventState === 'gallery' || eventState === 'lightbox') return;
-      // Voir le commentaire équivalent sur voyageItem.mouseleave.
-      if (eventState === 'scatter') {
+    if (CAN_HOVER) {
+      eventItem.addEventListener('mouseenter', () => {
+        if (photoListLocked || transitioning) return;
         clearTimeout(eLeaveTimer);
-        eLeaveTimer = setTimeout(eTriggerHide, 90);
-      }
-    });
+        clearTimeout(eClearTimer);
+        if (voyageState === 'scatter') { clearTimeout(vLeaveTimer); vHideScatter(120, () => { voyageOverlay.innerHTML = ''; vSetState('off'); }); }
+        if (streetState === 'scatter') { clearTimeout(sLeaveTimer); sHideScatter(120, () => { streetOverlay.innerHTML = ''; sSetState('off'); }); }
+        if (eventState === 'gallery' || eventState === 'lightbox') return;
+        document.querySelectorAll('.photo-list-item').forEach(i =>
+          i.classList.toggle('is-hovered', i === eventItem)
+        );
+        // Ré-entrée rapide pendant que le fondu de sortie précédent tournait
+        // encore (l'état n'a pas eu le temps de repasser à 'off') : on remet
+        // les photos déjà présentes à pleine opacité plutôt que d'ignorer ce survol.
+        if (eventState === 'scatter') { eRestoreScatter(); return; }
+        eScatter();
+      });
+
+      eventItem.addEventListener('mouseleave', () => {
+        if (eventState === 'gallery' || eventState === 'lightbox') return;
+        // Voir le commentaire équivalent sur voyageItem.mouseleave.
+        if (eventState === 'scatter') {
+          clearTimeout(eLeaveTimer);
+          eLeaveTimer = setTimeout(eTriggerHide, 90);
+        }
+      });
+    }
 
     eventItem.addEventListener('click', e => {
       e.stopPropagation();
@@ -1871,29 +1885,31 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (streetItem && streetOverlay) {
-    streetItem.addEventListener('mouseenter', () => {
-      if (photoListLocked || transitioning) return;
-      clearTimeout(sLeaveTimer);
-      clearTimeout(sClearTimer);
-      if (voyageState === 'scatter') { clearTimeout(vLeaveTimer); vHideScatter(120, () => { voyageOverlay.innerHTML = ''; vSetState('off'); }); }
-      if (eventState  === 'scatter') { clearTimeout(eLeaveTimer); eHideScatter(120, () => { eventOverlay.innerHTML  = ''; eSetState('off'); }); }
-      document.querySelectorAll('.photo-list-item').forEach(i =>
-        i.classList.toggle('is-hovered', i === streetItem)
-      );
-      // Ré-entrée rapide pendant que le fondu de sortie précédent tournait
-      // encore (l'état n'a pas eu le temps de repasser à 'off') : on remet
-      // les photos déjà présentes à pleine opacité plutôt que d'ignorer ce survol.
-      if (streetState === 'scatter') { sRestoreScatter(); return; }
-      sScatter();
-    });
-
-    streetItem.addEventListener('mouseleave', () => {
-      // Voir le commentaire équivalent sur voyageItem.mouseleave.
-      if (streetState === 'scatter') {
+    if (CAN_HOVER) {
+      streetItem.addEventListener('mouseenter', () => {
+        if (photoListLocked || transitioning) return;
         clearTimeout(sLeaveTimer);
-        sLeaveTimer = setTimeout(sTriggerHide, 90);
-      }
-    });
+        clearTimeout(sClearTimer);
+        if (voyageState === 'scatter') { clearTimeout(vLeaveTimer); vHideScatter(120, () => { voyageOverlay.innerHTML = ''; vSetState('off'); }); }
+        if (eventState  === 'scatter') { clearTimeout(eLeaveTimer); eHideScatter(120, () => { eventOverlay.innerHTML  = ''; eSetState('off'); }); }
+        document.querySelectorAll('.photo-list-item').forEach(i =>
+          i.classList.toggle('is-hovered', i === streetItem)
+        );
+        // Ré-entrée rapide pendant que le fondu de sortie précédent tournait
+        // encore (l'état n'a pas eu le temps de repasser à 'off') : on remet
+        // les photos déjà présentes à pleine opacité plutôt que d'ignorer ce survol.
+        if (streetState === 'scatter') { sRestoreScatter(); return; }
+        sScatter();
+      });
+
+      streetItem.addEventListener('mouseleave', () => {
+        // Voir le commentaire équivalent sur voyageItem.mouseleave.
+        if (streetState === 'scatter') {
+          clearTimeout(sLeaveTimer);
+          sLeaveTimer = setTimeout(sTriggerHide, 90);
+        }
+      });
+    }
 
     streetItem.addEventListener('click', e => {
       e.stopPropagation();
@@ -2140,6 +2156,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'palais.type': 'Direction artistique', 'palais.discipline': 'Identité visuelle, Photographie',
       'calsmith.type': 'Graphisme', 'calsmith.discipline': 'Identité visuelle, Réseaux sociaux',
       'poster.type': 'Graphisme', 'poster.discipline': 'Graphisme',
+      'pelago.type': 'Graphisme', 'pelago.discipline': 'Identité visuelle, Photographie',
       'fun.btn': 'Amusement', 'fun.cta': 'Cliquez ici et amusez-vous',
     },
     en: {
@@ -2163,6 +2180,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'palais.type': 'Art direction', 'palais.discipline': 'Visual identity, Photography',
       'calsmith.type': 'Graphic design', 'calsmith.discipline': 'Visual identity, Social media',
       'poster.type': 'Graphic design', 'poster.discipline': 'Graphic design',
+      'pelago.type': 'Graphic design', 'pelago.discipline': 'Visual identity, Photography',
       'fun.btn': 'Playground', 'fun.cta': 'Click here and have fun',
     }
   };
