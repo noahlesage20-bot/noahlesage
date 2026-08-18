@@ -137,8 +137,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const O_VW = window.innerWidth, O_VH = window.innerHeight;
   const O_N  = O_SRCS.length;
-  const O_R  = Math.min(O_VW, O_VH) * 0.26;
-  const O_W  = Math.min(O_VW * 0.17, 210);
+  // Mobile : cartes proportionnellement plus grosses (ratio de largeur plus
+  // élevé) — sur un écran étroit, 17% de la largeur donnait des vignettes
+  // minuscules ; le rayon suit pour éviter qu'elles ne se chevauchent trop.
+  const O_MOBILE = O_VW <= 768;
+  const O_R  = Math.min(O_VW, O_VH) * (O_MOBILE ? 0.30 : 0.26);
+  const O_W  = O_MOBILE ? Math.min(O_VW * 0.30, 150) : Math.min(O_VW * 0.17, 210);
   const O_H  = O_W * 1.32;
   const O_CX = O_VW / 2;
   const O_CY = O_VH / 2;
@@ -2250,13 +2254,20 @@ document.addEventListener('DOMContentLoaded', () => {
       funLayer.appendChild(dot);
       const d = { el: dot, x, y, r: size / 2 };
       funDots.push(d);
-      dot.addEventListener('mousedown', e => {
-        e.preventDefault();
+      const startDrag = (clientX, clientY) => {
         funDragDot = d;
         dot.classList.add('is-dragging');
-        funDragOffX = e.clientX - d.x;
-        funDragOffY = e.clientY - d.y;
+        funDragOffX = clientX - d.x;
+        funDragOffY = clientY - d.y;
+      };
+      dot.addEventListener('mousedown', e => {
+        e.preventDefault();
+        startDrag(e.clientX, e.clientY);
       });
+      dot.addEventListener('touchstart', e => {
+        const t = e.touches[0];
+        startDrag(t.clientX, t.clientY);
+      }, { passive: true });
       requestAnimationFrame(() => dot.classList.add('is-in'));
     }
   }
@@ -2271,16 +2282,21 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function handleFunMouseMove(e) {
+    // Support souris ET tactile — un TouchEvent n'a pas de clientX/Y à sa
+    // racine, seulement sur chacun de ses .touches[].
+    const point = e.touches ? e.touches[0] : e;
+    if (!point) return;
+    if (e.cancelable) e.preventDefault(); // évite que la page scrolle pendant qu'on joue au doigt
     const w = window.innerWidth, h = window.innerHeight;
 
     if (funDragDot) {
-      funDragDot.x = Math.max(funDragDot.r, Math.min(w - funDragDot.r, e.clientX - funDragOffX));
-      funDragDot.y = Math.max(funDragDot.r, Math.min(h - funDragDot.r, e.clientY - funDragOffY));
+      funDragDot.x = Math.max(funDragDot.r, Math.min(w - funDragDot.r, point.clientX - funDragOffX));
+      funDragDot.y = Math.max(funDragDot.r, Math.min(h - funDragDot.r, point.clientY - funDragOffY));
       funDragDot.el.style.left = funDragDot.x + 'px';
       funDragDot.el.style.top  = funDragDot.y + 'px';
     }
 
-    const mx = e.clientX, my = e.clientY;
+    const mx = point.clientX, my = point.clientY;
     const pushRadius = 220;
     funDots.forEach(d => {
       if (d === funDragDot) return;
@@ -2318,11 +2334,19 @@ document.addEventListener('DOMContentLoaded', () => {
       funMouseHandler = handleFunMouseMove;
       document.addEventListener('mousemove', funMouseHandler);
       document.addEventListener('mouseup', handleFunMouseUp);
+      document.addEventListener('touchmove', funMouseHandler, { passive: false });
+      document.addEventListener('touchend', handleFunMouseUp);
+      document.addEventListener('touchcancel', handleFunMouseUp);
     } else {
       funDragDot = null;
       document.removeEventListener('mouseup', handleFunMouseUp);
+      document.removeEventListener('touchend', handleFunMouseUp);
+      document.removeEventListener('touchcancel', handleFunMouseUp);
       removeFunDots();
-      if (funMouseHandler) document.removeEventListener('mousemove', funMouseHandler);
+      if (funMouseHandler) {
+        document.removeEventListener('mousemove', funMouseHandler);
+        document.removeEventListener('touchmove', funMouseHandler);
+      }
       funMouseHandler = null;
     }
   }

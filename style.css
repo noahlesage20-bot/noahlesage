@@ -908,6 +908,15 @@ img, video {
   opacity: 0.1;
 }
 
+/* Indice "voir la galerie" — masqué sur desktop où le survol révèle déjà un
+   aperçu des photos (voir vScatter/eScatter/sScatter dans script.js) ; cet
+   aperçu est désactivé au tactile (aucun vrai survol), donc affiché ici en
+   remplacement pour que ces libellés se lisent clairement comme menant à
+   une galerie plutôt que comme un simple titre. */
+.photo-list-hint {
+  display: none;
+}
+
 /* Reveal .photo-list-item — géré par GSAP (ENTER_REVEAL_SEL dans script.js) */
 
 /* ==========================================
@@ -1837,40 +1846,48 @@ div.mc-v.is-shown   { display: block; }
   gap: 16px;
 }
 
+/* Pastilles rondes — rappelle les visuels circulaires du loader d'entrée du
+   site, plutôt que des barres pleine largeur. */
 .cs-brand-colors {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
 .cs-swatch {
-  height: clamp(26px, 2.2vw, 36px);
-  border-radius: 5px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
   display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 0 10px;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 58px;
+  text-align: center;
 }
 
-.cs-swatch--white  { background: #ffffff; color: #0a0a0a; }
-.cs-swatch--black  { background: #0a0a0a; color: #ffffff; border-color: transparent; }
-.cs-swatch--red    { background: #e8262a; color: #ffffff; border-color: transparent; }
-.cs-swatch--pink   { background: #f5d6da; color: #0a0a0a; }
-.cs-swatch--blue   { background: #b4cefb; color: #0a0a0a; }
-.cs-swatch--yellow { background: #f7ff9d; color: #0a0a0a; }
-.cs-swatch--yellow-bold { background: #efe533; color: #0a0a0a; }
+.cs-swatch-dot {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.cs-swatch--white  .cs-swatch-dot { background: #ffffff; }
+.cs-swatch--black  .cs-swatch-dot { background: #0a0a0a; border-color: transparent; }
+.cs-swatch--red    .cs-swatch-dot { background: #e8262a; border-color: transparent; }
+.cs-swatch--pink   .cs-swatch-dot { background: #f5d6da; }
+.cs-swatch--blue   .cs-swatch-dot { background: #b4cefb; }
+.cs-swatch--yellow .cs-swatch-dot { background: #f7ff9d; }
+.cs-swatch--yellow-bold .cs-swatch-dot { background: #efe533; }
 
 .cs-swatch-name {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
 }
 
 .cs-swatch-hex {
-  font-size: 9px;
+  font-size: 8.5px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  opacity: 0.65;
+  opacity: 0.55;
 }
 
 .cs-brand-type {
@@ -2220,11 +2237,11 @@ div.mc-v.is-shown   { display: block; }
   .photo-list {
     padding: calc(var(--header-h) + 10vw) var(--pad) 8vw;
     justify-content: flex-start;
-    gap: 0;
+    gap: 4vw;
   }
   .photo-list-item { --pl-size: clamp(38px, 14vw, 70px); padding: 0.1em 0; }
   .photo-list-name {
-    text-align: left;
+    text-align: center;
     line-height: 0.95;
   }
 
@@ -2554,5 +2571,18 @@ div.mc-v.is-shown   { display: block; }
   .mc-vid-expand-badge {
     opacity: 1;
     background: rgba(10, 10, 10, 0.32);
+  }
+
+  /* Idem pour Évènement/Street/Voyage : le survol qui révélait un aperçu
+     scatter des photos (voir CAN_HOVER dans script.js) n'existe pas au
+     doigt — cet indice le remplace pour que ça se lise comme menant à
+     une galerie plutôt que comme un simple titre de page. */
+  .photo-list-hint {
+    display: block;
+    text-align: center;
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    opacity: 0.4;
+    margin-top: 0.3em;
   }
 }
