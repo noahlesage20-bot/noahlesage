@@ -282,6 +282,14 @@ document.addEventListener('DOMContentLoaded', () => {
         onComplete: () => {
           gsap.set(workPage, { clearProps: 'transform,opacity' });
           initRevealGSAP('work');
+          // Lien direct chargé avec un #hash (ex: partagé depuis une autre
+          // page) : l'écran de chargement révèle toujours Work en premier
+          // (l'animation du loader lui est dédiée), puis on enchaîne
+          // immédiatement vers la vraie page ciblée par le lien.
+          const deepLink = location.hash.slice(1);
+          if (deepLink && deepLink !== 'work' && document.getElementById('page-' + deepLink)) {
+            navigateTo(deepLink);
+          }
         }
       });
       tl.addLabel('enter');
@@ -500,8 +508,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // composant (voir les appels tout en bas de cette fonction) — chaque
   // page a sa propre instance indépendante (mesures, drag, molette).
   function initProjStrip(pageId) {
-    const strip = document.querySelector('#page-' + pageId + ' .proj-strip');
-    const track = document.querySelector('#page-' + pageId + ' .proj-strip-track');
+    const pageEl = document.getElementById('page-' + pageId);
+    const strip  = pageEl && pageEl.querySelector('.proj-strip');
+    const track  = pageEl && pageEl.querySelector('.proj-strip-track');
     if (!strip || !track) return;
     const items = [...track.querySelectorAll('.proj-strip-item')];
 
@@ -595,6 +604,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (m.readyState >= 1) onReady(); else m.addEventListener('loadedmetadata', onReady, { once: true });
       }
     });
+    // Tant que la page n'a jamais été visitée, ces médias n'ont encore
+    // aucun src (voir data-lazy-src / hydrateLazyMedia) : le bloc
+    // ci-dessus se déclenche donc tout de suite avec des dimensions
+    // vides (img.complete est vrai sans src), et le calage initial sur le
+    // hero (targetX = -panDist juste en dessous) part alors d'un panDist
+    // quasi nul. Une fois l'hydratation réelle terminée (premier passage
+    // sur la page), on remesure ET on recale sur le hero pour de vrai —
+    // une seule fois, pour ne pas faire sauter la position si l'utilisateur
+    // est déjà en train de glisser la case à ce moment-là.
+    let hydratedOnce = false;
+    pageEl.addEventListener('lazymedia:ready', () => {
+      measure();
+      if (!hydratedOnce) {
+        hydratedOnce = true;
+        targetX  = -panDist;
+        currentX = targetX;
+      }
+    });
 
     // Clic sur un visuel → lightbox plein écran (images ET vidéos, voir
     // stripLbOpen) — sauf si ce "clic" est en fait la fin d'un glisser
@@ -606,7 +633,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const lbList = items.map(item => {
       const m = item.querySelector('img, video');
       if (!m) return null;
-      return { type: m.tagName.toLowerCase(), src: m.getAttribute('src') };
+      // data-lazy-src en repli : cette liste est construite au chargement
+      // du site, avant que la page n'ait été visitée et donc hydratée
+      // (voir hydrateLazyMedia) — src est encore vide à ce moment-là.
+      return { type: m.tagName.toLowerCase(), src: m.getAttribute('src') || m.getAttribute('data-lazy-src') };
     });
     items.forEach((item, i) => {
       item.addEventListener('click', () => {
@@ -626,7 +656,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!cells.length) return;
     const lbList = cells.map(cell => {
       const img = cell.querySelector('img');
-      return { type: 'img', src: img.getAttribute('src') };
+      // Voir le commentaire équivalent dans initProjStrip() : la page n'a
+      // pas encore été visitée/hydratée à cet instant.
+      return { type: 'img', src: img.getAttribute('src') || img.getAttribute('data-lazy-src') };
     });
     cells.forEach((cell, i) => {
       cell.addEventListener('click', () => stripLbOpen(lbList, i));
@@ -842,6 +874,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { passive: true });
   });
 
+  // Charge en vrai les images/vidéos d'une page la première fois qu'on y
+  // arrive (voir data-lazy-src dans index.html) — sans ça, le navigateur
+  // téléchargeait TOUT le site (images ET vidéos de chaque projet) dès le
+  // premier chargement, puisque toutes les pages existent déjà dans le DOM
+  // en permanence (juste invisibles) : ~110 Mo au lieu de quelques Mo pour
+  // la seule page Work. C'est la cause principale du démarrage lent une
+  // fois le site déployé sur internet (invisible en local, où tout se lit
+  // depuis le disque).
+  function hydrateLazyMedia(pageEl) {
+    const els = [...pageEl.querySelectorAll('[data-lazy-src]')];
+    els.forEach(el => {
+      el.src = el.dataset.lazySrc;
+      el.removeAttribute('data-lazy-src');
+      if (el.tagName === 'VIDEO') el.load();
+    });
+    if (!els.length) return;
+    // Prévient qui en a besoin (ex: initProjStrip, qui doit remesurer la
+    // largeur de la piste une fois les vraies dimensions connues — voir
+    // son propre écouteur 'lazymedia:ready').
+    let pending = els.length;
+    const onReady = () => { if (--pending <= 0) pageEl.dispatchEvent(new CustomEvent('lazymedia:ready')); };
+    els.forEach(el => {
+      if (el.tagName === 'IMG') {
+        if (el.complete) onReady(); else el.addEventListener('load', onReady, { once: true });
+      } else {
+        if (el.readyState >= 1) onReady(); else el.addEventListener('loadedmetadata', onReady, { once: true });
+      }
+    });
+  }
+
   function navigateTo(target) {
     if (transitioning || target === current) return;
     transitioning = true;
@@ -869,6 +931,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // le reveal de contenu — sinon on re-cacherait des éléments déjà révélés
     // (et jamais ré-affichés, puisque initRevealGSAP() ne se relance pas).
     const firstVisit = !gsapPagesSetup.has(target);
+    // Idem pour les médias : ne télécharge les images/vidéos de cette page
+    // que maintenant qu'on y arrive vraiment (voir hydrateLazyMedia et le
+    // passage src → data-lazy-src dans index.html) — dès le lancement de la
+    // transition plutôt qu'à la toute fin, pour leur laisser le temps de
+    // charger pendant l'animation.
+    if (firstVisit) hydrateLazyMedia(nextEl);
 
     const tl = gsap.timeline({
       onStart:    () => document.body.classList.add('is-transitioning'),
@@ -928,6 +996,19 @@ document.addEventListener('DOMContentLoaded', () => {
       if (siteHeader) siteHeader.classList.toggle('is-hello', target === 'hello');
       current = target;
       updateNavActive(target);
+      // URL réelle par page — copier le lien depuis n'importe quelle page
+      // renvoie maintenant vers cette page précise, et permet au bouton
+      // précédent/suivant du navigateur de fonctionner (voir popstate
+      // plus bas). Pas de push si on est déjà sur ce hash (cas d'un
+      // navigateTo() déclenché PAR un popstate — le hash a déjà changé).
+      // Isolé dans un try/catch : l'API History peut être restreinte sur
+      // certains navigateurs en file:// — ça ne doit jamais casser la
+      // navigation elle-même.
+      try {
+        if (location.hash.slice(1) !== target) {
+          history.pushState({ page: target }, '', '#' + target);
+        }
+      } catch (e) {}
     });
 
     // ③ Entry — nouvelle page monte depuis le bas avec fluidité
@@ -977,6 +1058,18 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 'enter+=0.12');
     }
   }
+
+  // Bouton précédent/suivant du navigateur — navigue vers la page dont le
+  // hash vient d'être rétabli par le navigateur (déjà changé au moment où
+  // cet évènement se déclenche). Ignore les hash vides (retour avant le
+  // premier pushState, ex: état de chargement initial) et les hash qui ne
+  // correspondent à aucune page réelle.
+  window.addEventListener('popstate', () => {
+    const target = location.hash.slice(1);
+    if (target && target !== current && document.getElementById('page-' + target) && !transitioning) {
+      navigateTo(target);
+    }
+  });
 
   // ── Roulette factory (shared by Work & Photo) ────────────────────────────
   function initRoulette(rouletteId, trackId, imgId, startIdx) {
