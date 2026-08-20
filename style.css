@@ -465,13 +465,22 @@ img, video {
   letter-spacing: 0.1em;
 }
 .gf-lang-opt {
+  position: relative;
   color: rgba(255,255,255,0.28);
   transition: color 0.2s ease;
+}
+/* Zone de tap invisible — le texte visible (8-10px) est minuscule pour un
+   doigt, la zone cliquable réelle ne l'est pas. */
+.gf-lang-opt::before {
+  content: '';
+  position: absolute;
+  inset: -14px -3px;
 }
 .gf-lang-opt.is-active { color: var(--white); }
 .gf-lang-sep { color: rgba(255,255,255,0.12); }
 
 .gf-fun-btn {
+  position: relative;
   background: none;
   border: none;
   cursor: pointer;
@@ -482,6 +491,11 @@ img, video {
   letter-spacing: 0.1em;
   color: rgba(255,255,255,0.28);
   transition: color 0.2s ease;
+}
+.gf-fun-btn::before {
+  content: '';
+  position: absolute;
+  inset: -14px -4px;
 }
 .gf-fun-btn:hover { color: var(--yellow); }
 .gf-fun-btn.is-active { color: var(--yellow); }
@@ -1274,6 +1288,7 @@ a.hello-info-link:hover { opacity: 0.38; }
 }
 
 .mc-lang-btn {
+  position: relative;
   background: none;
   border: none;
   font-family: var(--font);
@@ -1286,6 +1301,16 @@ a.hello-info-link:hover { opacity: 0.38; }
   opacity: 0.28;
   padding: 0;
   transition: opacity 0.25s ease;
+}
+
+/* Zone de tap invisible, bien plus généreuse que les 2 lettres visibles —
+   même principe que .photo-list-item::before. Débord horizontal limité à
+   la moitié du gap (5px) entre FR et EN pour que les deux zones ne se
+   chevauchent jamais. */
+.mc-lang-btn::before {
+  content: '';
+  position: absolute;
+  inset: -14px -2px;
 }
 
 .mc-lang-btn.is-active { opacity: 1; }
@@ -1622,28 +1647,57 @@ div.mc-v.is-shown   { display: block; }
 }
 
 /* ── Cal Smith — feed Instagram fictif ────────────────────────────────────
-   Mockup de profil complet (avatar/stats, bio, boutons, stories à la une,
-   grille 3×3), largeur calée sur celle d'un profil Instagram desktop
-   classique, centrée dans la page. Couleurs volontairement proches des
-   vraies conventions Instagram (bleu lien vérifié/CTA, gris secondaire)
-   plutôt que la palette du site — c'est un mockup du livrable, pas une
-   section éditoriale du portfolio. */
+   Présenté comme une vraie capture d'écran plutôt que du contenu flottant :
+   carte avec bordure/ombre/coins arrondis, fausse barre de navigation en
+   tête, contenu du profil padded, grille photo au ras des bords de la carte
+   (comme la vraie app). Largeur mobile assumée (proche d'un écran de
+   téléphone), volontairement plus étroite que les images du dessus — c'est
+   justement l'effet recherché, un écran de profil au milieu d'une galerie
+   photo. Couleurs volontairement proches des vraies conventions Instagram
+   (bleu lien vérifié/CTA, gris secondaire) plutôt que la palette du site —
+   c'est un mockup du livrable, pas une section éditoriale du portfolio. */
 .cs-instagram {
-  max-width: 420px;
+  max-width: 460px;
   margin: 0;
-  padding: 0 0 4vw;
+  margin-bottom: 4vw;
+  background: var(--white);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 18px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.09);
+  overflow: hidden;
+}
+
+.cs-ig-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  color: var(--black);
+}
+
+.cs-ig-navbar-user {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cs-ig-body {
+  padding: 16px 16px 0;
 }
 
 .cs-ig-top {
   display: flex;
   align-items: center;
-  gap: clamp(20px, 4vw, 36px);
+  gap: clamp(16px, 3vw, 26px);
   margin-bottom: 16px;
 }
 
 .cs-ig-avatar {
-  width: 84px;
-  height: 84px;
+  width: 92px;
+  height: 92px;
   flex-shrink: 0;
   border-radius: 50%;
   overflow: hidden;
@@ -1704,7 +1758,7 @@ div.mc-v.is-shown   { display: block; }
 
 .cs-ig-bio-text {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 400;
   line-height: 1.45;
 }
 
@@ -2116,6 +2170,23 @@ div.mc-v.is-shown   { display: block; }
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.25;
+}
+
+@media (max-width: 768px) {
+  /* 250px prenait plus de la moitié d'un écran de téléphone et n'avait
+     jamais reçu d'ajustement mobile — réduite et calée sur la zone de
+     sécurité en bas (encoche/barre gestuelle iOS). */
+  .floating-next-project {
+    width: 132px;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    right: 16px;
+  }
+  .floating-next-project-title {
+    font-size: 11.5px;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+  }
 }
 
 /* Reveal .mc-proj-left / .mc-proj-right — géré par GSAP (ENTER_REVEAL_SEL dans script.js) */
