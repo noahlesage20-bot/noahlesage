@@ -307,6 +307,12 @@ img, video {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
+  /* Sert uniquement à laisser assez de scroll pour animer la révélation du
+     footer (voir gfH dans script.js, mesuré en vrai sur le footer — donc
+     plus besoin de marge de sécurité ici pour éviter la troncature en
+     plein écran, corrigée côté JS). Une valeur plus grande que la vraie
+     hauteur du footer crée un blanc mort avant que la révélation démarre
+     — gardé proche de sa hauteur réelle en usage normal. */
   padding-bottom: 300px;
 }
 
@@ -737,7 +743,7 @@ img, video {
   width: 100%;
   height: auto;
   display: block;
-  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
   -webkit-user-drag: none;
 }
@@ -760,7 +766,7 @@ img, video {
   width: 100%;
   height: auto;
   display: block;
-  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
   -webkit-user-drag: none;
 }

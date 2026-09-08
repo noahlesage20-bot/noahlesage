@@ -135,17 +135,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const O_TILTS = [-8, 12, -4, 9, -13, 6, -10];
   O_SRCS.forEach(src => { const i = new Image(); i.src = src; });
 
-  const O_VW = window.innerWidth, O_VH = window.innerHeight;
+  let O_VW = window.innerWidth, O_VH = window.innerHeight;
   const O_N  = O_SRCS.length;
   // Mobile : cartes proportionnellement plus grosses (ratio de largeur plus
   // élevé) — sur un écran étroit, 17% de la largeur donnait des vignettes
   // minuscules ; le rayon suit pour éviter qu'elles ne se chevauchent trop.
   const O_MOBILE = O_VW <= 768;
-  const O_R  = Math.min(O_VW, O_VH) * (O_MOBILE ? 0.30 : 0.26);
+  let O_R  = Math.min(O_VW, O_VH) * (O_MOBILE ? 0.30 : 0.26);
   const O_W  = O_MOBILE ? Math.min(O_VW * 0.30, 150) : Math.min(O_VW * 0.17, 210);
   const O_H  = O_W * 1.32;
-  const O_CX = O_VW / 2;
-  const O_CY = O_VH / 2;
+  let O_CX = O_VW / 2;
+  let O_CY = O_VH / 2;
+
+  // Basculer en plein écran (ou en sortir) pendant que le loader tourne
+  // change brutalement les dimensions de la fenêtre — sans ceci, le centre
+  // et le rayon de l'orbite restaient calés sur l'ancienne taille, et les
+  // photos tournaient décentrées / mal proportionnées par rapport au
+  // nouvel écran.
+  window.addEventListener('resize', () => {
+    O_VW = window.innerWidth; O_VH = window.innerHeight;
+    O_CX = O_VW / 2; O_CY = O_VH / 2;
+    O_R  = Math.min(O_VW, O_VH) * (O_MOBILE ? 0.30 : 0.26);
+  });
 
   let orbitAngle   = 0;
   let orbitRunning = true;
@@ -390,6 +401,26 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const globalFooter = document.getElementById('global-footer');
+
+  // La réserve de scroll qui laisse la place à l'animation de révélation du
+  // footer (voir gfH plus bas) doit correspondre exactement à sa vraie
+  // hauteur — une valeur CSS fixe (300px, 380px...) est soit trop petite
+  // (le footer se retrouve tronqué en plein écran) soit trop grande (du
+  // blanc mort avant que la révélation démarre), et sa vraie hauteur change
+  // avec la largeur d'écran (padding en vw). Mesurée pour de vrai et
+  // appliquée en style inline sur chaque page — la valeur CSS ne sert plus
+  // que de repli avant que ce code ne tourne.
+  function syncFooterPadding() {
+    if (!globalFooter) return;
+    const h = globalFooter.offsetHeight + 'px';
+    pages.forEach(p => { p.style.paddingBottom = h; });
+  }
+  syncFooterPadding();
+  window.addEventListener('resize', syncFooterPadding);
+  // Re-mesure une fois les polices custom chargées : avant ça, le footer
+  // peut s'afficher (brièvement) dans une police de repli aux métriques
+  // différentes, faussant légèrement la hauteur mesurée.
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(syncFooterPadding);
 
   // ── GSAP ScrollTrigger — Reveals organiques ───────────────────────────────
   if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
@@ -933,10 +964,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const firstVisit = !gsapPagesSetup.has(target);
     // Idem pour les médias : ne télécharge les images/vidéos de cette page
     // que maintenant qu'on y arrive vraiment (voir hydrateLazyMedia et le
-    // passage src → data-lazy-src dans index.html) — dès le lancement de la
-    // transition plutôt qu'à la toute fin, pour leur laisser le temps de
-    // charger pendant l'animation.
-    if (firstVisit) hydrateLazyMedia(nextEl);
+    // passage src → data-lazy-src dans index.html). Repoussé au frame
+    // suivant (requestAnimationFrame) plutôt qu'exécuté ici tout de suite :
+    // cette boucle pose du src sur potentiellement une dizaine d'images/
+    // vidéos d'un coup (.load() compris pour chaque vidéo), un travail
+    // synchrone qui, fait pile au moment où la timeline GSAP démarre,
+    // pouvait saccader la toute première frame de la transition — surtout
+    // visible sur les pages les plus chargées (galeries photo, Poster,
+    // Pelago).
+    if (firstVisit) requestAnimationFrame(() => hydrateLazyMedia(nextEl));
 
     const tl = gsap.timeline({
       onStart:    () => document.body.classList.add('is-transitioning'),
@@ -1034,6 +1070,19 @@ document.addEventListener('DOMContentLoaded', () => {
           const el = document.querySelector('#work-scroll-hint .work-hint-line');
           if (el) scrambleLine(el, 'scroll ↑ ↓', 200);
         }, 120);
+        // La page glisse jusqu'à sa position : si la souris était déjà
+        // immobile pile là où "Voyage"/"Évènement"/"Street" atterrit, aucun
+        // mouseenter ne se déclenche — ça ne fire que sur un vrai passage du
+        // curseur par-dessus l'élément, pas quand l'élément vient se placer
+        // sous un curseur qui n'a pas bougé. Sans ce correctif, l'aperçu ne
+        // se lançait qu'après avoir bougé la souris (ex: cliquer ailleurs
+        // "dans le vide" puis revenir dessus). On vérifie ce qu'il y a sous
+        // le curseur une fois la page posée et on déclenche l'aperçu nous-mêmes.
+        if (target === 'photo' && CAN_HOVER) {
+          const under = document.elementFromPoint(mX, mY);
+          const item  = under && under.closest('.photo-list-item');
+          if (item) item.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false }));
+        }
       },
     }, 'enter');
 
@@ -1332,6 +1381,30 @@ document.addEventListener('DOMContentLoaded', () => {
   // n'attache que le click : tap = navigation directe, sans détour.
   const CAN_HOVER = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
+  // Position aléatoire pour une miniature dispersée, en évitant la position
+  // actuelle du curseur (mX/mY, déjà suivis pour le curseur personnalisé).
+  // Sans ça, une miniature pouvait atterrir pile sous une souris immobile —
+  // le survol "saute" alors dessus (elle devient l'élément survolé à la
+  // place du libellé texte), ce qui déclenche un mouseleave sur le libellé,
+  // qui cache le scatter, ce qui remet le curseur sur le libellé (vide),
+  // qui redéclenche un mouseenter, qui re-scatter... une boucle de
+  // clignotement quasi infinie. Quelques essais avec une zone d'exclusion
+  // autour du curseur suffisent à éliminer le cas ; au-delà, on garde la
+  // dernière position tentée plutôt que de boucler indéfiniment.
+  function scatterPos(w, h) {
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const pad = 90; // rayon d'exclusion autour du curseur
+    let x, y;
+    for (let i = 0; i < 8; i++) {
+      x = 60 + Math.random() * Math.max(0, vw - w - 120);
+      y = 60 + Math.random() * Math.max(0, vh - h - 120);
+      const cx = x + w / 2, cy = y + h / 2;
+      const dx = cx - mX, dy = cy - mY;
+      if (Math.sqrt(dx * dx + dy * dy) > Math.max(w, h) / 2 + pad) break;
+    }
+    return { x, y };
+  }
+
   // ── Voyage — scatter & gallery ────────────────────────────────────────────
   const VOYAGE_PHOTOS = [
     'Voyage/DSCF0929.JPG','Voyage/DSCF0931.JPG','Voyage/DSCF0932.JPG',
@@ -1381,8 +1454,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const vw = window.innerWidth, vh = window.innerHeight;
       const w  = Math.min(190, Math.max(130, vw * 0.14));
       const h  = w * 1.5;
-      const x  = 60 + Math.random() * Math.max(0, vw - w - 120);
-      const y  = 60 + Math.random() * Math.max(0, vh - h - 120);
+      const { x, y } = scatterPos(w, h);
       const rot = (Math.random() - 0.5) * 22;
 
       el.style.left      = x + 'px';
@@ -1647,8 +1719,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const vw = window.innerWidth, vh = window.innerHeight;
       const w  = Math.min(190, Math.max(130, vw * 0.14));
       const h  = w * 1.5;
-      const x  = 60 + Math.random() * Math.max(0, vw - w - 120);
-      const y  = 60 + Math.random() * Math.max(0, vh - h - 120);
+      const { x, y } = scatterPos(w, h);
       const rot = (Math.random() - 0.5) * 22;
 
       el.style.left      = x + 'px';
@@ -1909,8 +1980,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const vw = window.innerWidth, vh = window.innerHeight;
       const w  = Math.min(190, Math.max(130, vw * 0.14));
       const h  = w * 1.5;
-      const x  = 60 + Math.random() * Math.max(0, vw - w - 120);
-      const y  = 60 + Math.random() * Math.max(0, vh - h - 120);
+      const { x, y } = scatterPos(w, h);
       const rot = (Math.random() - 0.5) * 22;
 
       el.style.left      = x + 'px';
@@ -2047,6 +2117,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.photo-list-item').forEach(i => i.classList.remove('is-hovered'));
     document.querySelectorAll('.voyage-lightbox').forEach(lb => lb.remove());
   }
+
+  // Les miniatures éparpillées (scatter) sont positionnées en px, calculés
+  // une fois au survol à partir de window.innerWidth/innerHeight — basculer
+  // en plein écran (ou en sortir) pendant qu'un survol est actif changeait
+  // brutalement ces dimensions sans jamais repositionner les photos déjà
+  // affichées, qui restaient éparpillées pour l'ancienne fenêtre. On
+  // recache juste ce cas précis (pas la galerie/lightbox, qui n'a pas ce
+  // souci de position figée) ; un nouveau survol les repositionnera bien.
+  window.addEventListener('resize', () => {
+    if (voyageState === 'scatter') vHideScatter(80, () => { voyageOverlay.innerHTML = ''; vSetState('off'); });
+    if (eventState  === 'scatter') eHideScatter(80, () => { eventOverlay.innerHTML  = ''; eSetState('off'); });
+    if (streetState === 'scatter') sHideScatter(80, () => { streetOverlay.innerHTML = ''; sSetState('off'); });
+  });
 
   // ── Lightbox partagé — galeries photo (évènement / street / voyage) ────────
   let pgLbSrcs = [];
@@ -2240,7 +2323,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'form.email.ph': 'votre@email.com',
       'form.msg.ph': 'Parlez-moi de votre projet…',
       'form.send': 'Envoyer →', 'form.retry': 'Réessayer →', 'form.confirm': 'Message envoyé — à bientôt.',
-      'hello.bio': 'Graphiste et directeur artistique freelance basé à Bordeaux, je conçois des identités visuelles et des directions artistiques pour des marques, lieux culturels et événements. Mon travail mêle image, print, animation et narration dans une approche minimaliste et éditoriale, influencée par la photographie.',
+      'hello.bio': 'Basé à Bordeaux, je développe des identités visuelles et des campagnes graphiques pour des lieux culturels et des marques, du Palais Bulles à Tapage. Ma direction artistique part de l\'image, nourrie par une pratique photographique quotidienne, et se prolonge en print, en animation et en récit.',
       'hello.social': 'Réseaux', 'hello.freelance': 'Freelance indépendant',
       'photo.voyage': 'Voyage', 'photo.event': 'Évènement',
       'stoxl.tagline': 'Direction artistique — Graphisme',
@@ -2264,7 +2347,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'form.email.ph': 'your@email.com',
       'form.msg.ph': 'Tell me about your project…',
       'form.send': 'Send →', 'form.retry': 'Try again →', 'form.confirm': 'Message sent — talk soon.',
-      'hello.bio': 'Freelance graphic designer and art director based in Bordeaux, I design visual identities and art directions for brands, cultural venues and events. My work blends image, print, animation and narrative in a minimalist and editorial approach, influenced by photography.',
+      'hello.bio': 'Based in Bordeaux, I develop visual identities and graphic campaigns for cultural venues and brands, from Palais Bulles to Tapage. My art direction starts from the image, fed by a daily photographic practice, and extends into print, animation and narrative.',
       'hello.social': 'Social', 'hello.freelance': 'Independent freelance',
       'photo.voyage': 'Travel', 'photo.event': 'Event',
       'stoxl.tagline': 'Art direction — Graphic design',
@@ -2472,11 +2555,17 @@ document.addEventListener('DOMContentLoaded', () => {
     navigateTo(target);
   });
 
-  // Scroll : clip-path ouvre la page par le bas + révèle le footer derrière
-  // GF_H = hauteur footer révélée, dynamique selon viewport
+  // Scroll : clip-path ouvre la page par le bas + révèle le footer derrière.
+  // gfH = hauteur réellement mesurée du footer (offsetHeight), pas une valeur
+  // fixe devinée : le footer a du padding en vw, donc sa vraie hauteur grandit
+  // avec la largeur de l'écran (encore plus en plein écran sur un grand
+  // moniteur) — avec un gfH figé à 300px, le clip-path ne révélait jamais
+  // plus de 300px, ce qui coupait le haut du footer (colonnes de liens) dès
+  // que sa vraie hauteur dépassait ça. Repli sur l'ancienne estimation si le
+  // footer n'est pas encore dans le DOM.
   pages.forEach(page => {
     page.addEventListener('scroll', () => {
-      const gfH = window.innerWidth <= 768 ? 460 : 300;
+      const gfH = (globalFooter && globalFooter.offsetHeight) || (window.innerWidth <= 768 ? 460 : 300);
       const dist = page.scrollHeight - page.scrollTop - page.clientHeight;
       const progress = Math.max(0, Math.min(1, 1 - dist / gfH));
       if (progress > 0) {

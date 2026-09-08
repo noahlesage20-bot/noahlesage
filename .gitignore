@@ -1,0 +1,8 @@
+# Sauvegardes locales des originaux avant compression — jamais utilisées par le site
+originaux-hd/
+
+# Fichiers orphelins (plus référencés par aucune page)
+_non-utilise/
+
+# Fichiers système macOS
+.DS_Store
