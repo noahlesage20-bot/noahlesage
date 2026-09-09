@@ -410,10 +410,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // avec la largeur d'écran (padding en vw). Mesurée pour de vrai et
   // appliquée en style inline sur chaque page — la valeur CSS ne sert plus
   // que de repli avant que ce code ne tourne.
+  const workPage = document.getElementById('page-work');
   function syncFooterPadding() {
     if (!globalFooter) return;
     const h = globalFooter.offsetHeight + 'px';
-    pages.forEach(p => { p.style.paddingBottom = h; });
+    const workLocked = workPage && window.innerWidth <= 768;
+    pages.forEach(p => {
+      p.style.paddingBottom = (workLocked && p === workPage) ? '0px' : h;
+    });
   }
   syncFooterPadding();
   window.addEventListener('resize', syncFooterPadding);
@@ -1305,15 +1309,28 @@ document.addEventListener('DOMContentLoaded', () => {
       setActive(activeIdx + (e.deltaY > 0 ? 1 : -1));
     }, { passive: false });
 
-    // Pas de swipe tactile vertical sur la roulette : ce geste est
-    // exactement celui du scroll de la page (la roulette occupe une bonne
-    // partie de l'écran en bas de la page Work), donc bloquer touchmove ici
-    // pour faire défiler les projets empêchait aussi de scroller la page —
-    // impossible à deviner pour l'utilisateur, qui se retrouvait coincé s'il
-    // posait le doigt sur la roulette. Au tactile, on parcourt la roulette
-    // au tap (déjà géré plus bas) plutôt qu'au swipe ; la molette desktop
-    // et le swipe horizontal de l'image (voir imgWrap plus bas, qui lui ne
-    // bloque jamais le scroll) restent inchangés.
+    // Swipe tactile sur la roulette — cycle les projets, exactement comme
+    // sur l'image (voir imgWrap plus bas). #page-work n'a plus de scroll de
+    // page sur mobile (voir style.css), donc ce geste ne peut plus tomber
+    // sur le footer : le swipe ne fait plus jamais que ça.
+    let roulSwipeX0 = 0, roulSwipeY0 = 0;
+    roulette.addEventListener('touchstart', e => {
+      roulSwipeX0 = e.touches[0].clientX;
+      roulSwipeY0 = e.touches[0].clientY;
+    }, { passive: true });
+    roulette.addEventListener('touchend', e => {
+      const dx = roulSwipeX0 - e.changedTouches[0].clientX;
+      const dy = roulSwipeY0 - e.changedTouches[0].clientY;
+      const now = Date.now();
+      if (now - lastWheel < 380) return;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        lastWheel = now;
+        setActive(activeIdx + (dx > 0 ? 1 : -1));
+      } else if (Math.abs(dy) > 40 && Math.abs(dy) > Math.abs(dx) * 1.5) {
+        lastWheel = now;
+        setActive(activeIdx + (dy > 0 ? 1 : -1));
+      }
+    }, { passive: true });
 
     // Click: inactive → activate; active + data-page → navigate
     items.forEach((item, i) => {

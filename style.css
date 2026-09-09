@@ -2276,14 +2276,15 @@ div.mc-v.is-shown   { display: block; }
     z-index: 1;
   }
 
-  /* Roulette : zone tactile généreuse. Plus de swipe géré en JS ici (voir
-     script.js) — touch-action reste donc en pan-y par défaut pour que le
-     doigt puisse scroller normalement la page depuis cette zone. */
+  /* Roulette : le swipe vertical/horizontal ici cycle les projets (voir
+     script.js) au lieu de scroller la page — touch-action coupe le pan
+     natif pour que ce geste ne tente jamais de faire défiler #page-work. */
   .proj-roulette {
     width: calc(72% - var(--pad));
     height: 200px;
     bottom: calc(var(--pad) + 2vw);
     z-index: 2;
+    touch-action: pan-x pinch-zoom;
     -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%);
     mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%);
   }
@@ -2302,8 +2303,13 @@ div.mc-v.is-shown   { display: block; }
     font-size: clamp(22px, 6.2vw, 28px);
   }
 
-  /* Work : padding réduit — le footer est accessible mais sans y tomber en scrollant */
-  #page-work, #page-photo, #page-home { padding-bottom: 280px; }
+  #page-photo, #page-home { padding-bottom: 280px; }
+
+  /* Work : aucun scroll de page sur mobile — la roulette occupe déjà tout
+     l'écran (.gallery = 100dvh) et se parcourt au tap/swipe (script.js),
+     jamais en faisant défiler la page. Empêche donc toute possibilité
+     d'atteindre/révéler le footer par accident en scrollant. */
+  #page-work { overflow-y: hidden; padding-bottom: 0; }
 
 
   /* ── Photo — liste typographique ─────────── */
