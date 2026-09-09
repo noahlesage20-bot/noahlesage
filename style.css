@@ -742,15 +742,16 @@ img, video {
 .pg-masonry-col {
   flex: 1 1 0;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: clamp(4px, 0.8vw, 12px);
+  /* Bloc simple (pas flex) : évite toute interaction flex/aspect-ratio sur
+     l'image, on garde le modèle éprouvé margin-bottom pour l'espacement
+     vertical entre photos d'une même colonne. */
 }
 
 .pg-event-item,
 .pg-voyage-item {
   overflow: hidden;
   cursor: pointer;
+  margin-bottom: clamp(4px, 0.8vw, 12px);
 }
 
 .pg-event-item img,
@@ -778,7 +779,8 @@ img, video {
     padding: 0 var(--pad) 16vw;
     gap: clamp(4px, 1.6vw, 8px);
   }
-  .pg-masonry-col { gap: clamp(4px, 1.6vw, 8px); }
+  .pg-event-item,
+  .pg-voyage-item { margin-bottom: clamp(4px, 1.6vw, 8px); }
 }
 
 .proj-list {
