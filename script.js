@@ -422,6 +422,50 @@ document.addEventListener('DOMContentLoaded', () => {
   // différentes, faussant légèrement la hauteur mesurée.
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(syncFooterPadding);
 
+  // ── Masonry photo (Évènement/Street/Voyage) — colonnes calculées en JS ────
+  // CSS `columns` + column-fill:balance (défaut) répartit très mal les items
+  // de hauteurs inégales avec break-inside:avoid sur WebKit/Safari : des
+  // colonnes restent quasi vides pendant que la dernière absorbe tout le
+  // reste (bug de rendu intermittent, pas un souci de ratio/format). On
+  // connaît déjà le ratio exact de chaque photo (aspect-ratio inline) donc on
+  // peut répartir nous-mêmes, dans l'ordre, sur la colonne la plus courte.
+  function buildMasonryColumns(grid) {
+    if (!grid._masonryItems) {
+      grid._masonryItems = [...grid.querySelectorAll('.pg-event-item, .pg-voyage-item')];
+    }
+    const items = grid._masonryItems;
+    if (!items.length) return;
+    const n = window.innerWidth <= 768 ? 2 : 4;
+    if (grid._masonryN === n) return;
+    grid._masonryN = n;
+
+    const heights = new Array(n).fill(0);
+    const cols = Array.from({ length: n }, () => []);
+    items.forEach(item => {
+      const img = item.querySelector('img');
+      const ar  = img ? img.style.aspectRatio : '';
+      const [w, h] = ar.split('/').map(Number);
+      const relH = (w && h) ? h / w : 1;
+      let shortest = 0;
+      for (let i = 1; i < n; i++) if (heights[i] < heights[shortest]) shortest = i;
+      cols[shortest].push(item);
+      heights[shortest] += relH;
+    });
+
+    grid.innerHTML = '';
+    cols.forEach(colItems => {
+      const col = document.createElement('div');
+      col.className = 'pg-masonry-col';
+      colItems.forEach(item => col.appendChild(item));
+      grid.appendChild(col);
+    });
+  }
+  function layoutAllMasonry() {
+    document.querySelectorAll('.pg-event-grid, .pg-voyage-grid').forEach(buildMasonryColumns);
+  }
+  layoutAllMasonry();
+  window.addEventListener('resize', layoutAllMasonry);
+
   // ── GSAP ScrollTrigger — Reveals organiques ───────────────────────────────
   if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
     gsap.registerPlugin(ScrollTrigger);
@@ -479,11 +523,11 @@ document.addEventListener('DOMContentLoaded', () => {
         scroller: pageEl,
         start:    'top 92%',
         onEnter: batch => gsap.fromTo(batch,
-          { scale: 1.1, opacity: 0 },
+          { opacity: 0 },
           {
-            scale: 1, opacity: 1,
+            opacity: 1,
             duration: 1.1, ease: 'power3.out',
-            stagger: 0.07, clearProps: 'transform,opacity',
+            stagger: 0.07, clearProps: 'opacity',
           }
         ),
       });
@@ -1023,7 +1067,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // puis caché puis réanimé — tout part déjà de l'état caché).
         gsap.set(nextEl.querySelectorAll(ENTER_REVEAL_SEL), { opacity: 0, y: 22 });
         gsap.set(nextEl.querySelectorAll(SCROLL_MEDIA_SEL), { opacity: 0, scale: 1.1 });
-        gsap.set(nextEl.querySelectorAll(SCROLL_GRID_SEL),  { opacity: 0, scale: 1.1 });
+        gsap.set(nextEl.querySelectorAll(SCROLL_GRID_SEL),  { opacity: 0 });
         // Titres — chaque ligne masquée part sous son overflow:hidden
         gsap.set(nextEl.querySelectorAll(TITLE_LINES_SEL), { yPercent: 110 });
       }

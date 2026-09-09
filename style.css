@@ -725,43 +725,35 @@ img, video {
   flex-shrink: 0;
 }
 
-/* Évènement — masonry compacte */
-.pg-event-grid {
-  columns: 4;
-  column-gap: clamp(4px, 0.8vw, 12px);
-  padding: 0 var(--pad) 12vw;
-}
-
-.pg-event-item {
-  break-inside: avoid;
-  margin-bottom: clamp(4px, 0.8vw, 12px);
-  overflow: hidden;
-  cursor: pointer;
-}
-
-.pg-event-item img {
-  width: 100%;
-  height: auto;
-  display: block;
-  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
-  user-select: none;
-  -webkit-user-drag: none;
-}
-.pg-event-item:hover img { transform: scale(1.04); }
-
-/* Voyage — masonry compacte */
+/* Évènement / Street / Voyage — masonry compacte.
+   Colonnes construites en JS (script.js: buildMasonryColumns), pas via CSS
+   `columns` : column-fill:balance + break-inside:avoid répartit très mal des
+   items de hauteurs inégales sur WebKit/Safari (colonnes vides + dernière
+   colonne qui absorbe tout le reste). Ici .pg-masonry-col est un vrai flex
+   column, réparti à l'avance selon le ratio réel de chaque photo. */
+.pg-event-grid,
 .pg-voyage-grid {
-  columns: 4;
-  column-gap: clamp(4px, 0.8vw, 12px);
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(4px, 0.8vw, 12px);
   padding: 0 var(--pad) 12vw;
 }
 
+.pg-masonry-col {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(4px, 0.8vw, 12px);
+}
+
+.pg-event-item,
 .pg-voyage-item {
-  break-inside: avoid;
-  margin-bottom: clamp(4px, 0.8vw, 12px);
   overflow: hidden;
   cursor: pointer;
 }
+
+.pg-event-item img,
 .pg-voyage-item img {
   width: 100%;
   height: auto;
@@ -770,12 +762,10 @@ img, video {
   user-select: none;
   -webkit-user-drag: none;
 }
+.pg-event-item:hover img  { transform: scale(1.04); }
 .pg-voyage-item:hover img { transform: scale(1.03); }
 
 @media (max-width: 768px) {
-  .pg-event-grid  { columns: 2; }
-  .pg-voyage-grid { columns: 2; }
-
   .pg-sub-header {
     padding: calc(var(--header-h) + 8vw) var(--pad) 32px;
     gap: 14px;
@@ -786,10 +776,9 @@ img, video {
   .pg-event-grid,
   .pg-voyage-grid {
     padding: 0 var(--pad) 16vw;
-    column-gap: clamp(4px, 1.6vw, 8px);
+    gap: clamp(4px, 1.6vw, 8px);
   }
-  .pg-event-item  { margin-bottom: clamp(4px, 1.6vw, 8px); }
-  .pg-voyage-item { margin-bottom: clamp(4px, 1.6vw, 8px); }
+  .pg-masonry-col { gap: clamp(4px, 1.6vw, 8px); }
 }
 
 .proj-list {
