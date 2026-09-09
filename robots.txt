@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://ringerstudio.com/sitemap.xml
+Sitemap: https://noahlesage.com/sitemap.xml
 
 # Bloquer les ressources non publiques
 Disallow: /fonts/
