@@ -246,6 +246,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }, delay);
   }
 
+  // Labels aux coins de l'image Work ("Design graphique / Direction
+  // artistique" en haut-gauche, "Animation cinétique / Photographie" en
+  // bas-droite) — même traitement scramble que le hint "scroll ↑ ↓".
+  const HERO_FLOAT_LINES = [
+    { selector: '.hero-float--tl .hero-float-line:nth-child(1)', key: 'hero.gd', delay: 380  },
+    { selector: '.hero-float--tl .hero-float-line:nth-child(2)', key: 'hero.ad', delay: 600  },
+    { selector: '.hero-float--tr .hero-float-line:nth-child(1)', key: 'hero.by', delay: 720  },
+    { selector: '.hero-float--br .hero-float-line:nth-child(1)', key: 'hero.ka', delay: 840  },
+    { selector: '.hero-float--br .hero-float-line:nth-child(2)', key: 'hero.ph', delay: 1040 },
+  ];
+  function scrambleHeroFloat() {
+    HERO_FLOAT_LINES.forEach(({ selector, key, delay }) => {
+      const el = document.querySelector(selector);
+      const text = i18n[siteLang][key];
+      if (el && text) scrambleLine(el, text, delay);
+    });
+  }
+
   function burstFunDots() {
     if (!funLayer) return;
     const isMobile = window.innerWidth <= 768;
@@ -339,6 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const el = document.querySelector('#work-scroll-hint .work-hint-line');
       if (el) scrambleLine(el, 'scroll ↑ ↓', 200);
     }, 700);
+    scrambleHeroFloat();
   }
 
   // ── Navigation ────────────────────────────────────────────────────────────
@@ -1114,10 +1133,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // Carte flottante "projet suivant" — nouveau projet aléatoire à chaque arrivée
         // (l'écouteur de scroll qui gère son affichage est permanent, voir plus haut)
         if (projPages.has(target)) pickRandomNextProject(target, previousPage);
-        if (target === 'work') setTimeout(() => {
-          const el = document.querySelector('#work-scroll-hint .work-hint-line');
-          if (el) scrambleLine(el, 'scroll ↑ ↓', 200);
-        }, 120);
+        if (target === 'work') {
+          setTimeout(() => {
+            const el = document.querySelector('#work-scroll-hint .work-hint-line');
+            if (el) scrambleLine(el, 'scroll ↑ ↓', 200);
+          }, 120);
+          scrambleHeroFloat();
+        }
         // La page glisse jusqu'à sa position : si la souris était déjà
         // immobile pile là où "Voyage"/"Évènement"/"Street" atterrit, aucun
         // mouseenter ne se déclenche — ça ne fire que sur un vrai passage du
@@ -2401,6 +2423,9 @@ document.addEventListener('DOMContentLoaded', () => {
       'poster.type': 'Graphisme', 'poster.discipline': 'Graphisme',
       'pelago.type': 'Graphisme', 'pelago.discipline': 'Identité visuelle, Photographie',
       'fun.btn': 'Amusement', 'fun.cta': 'Cliquez ici et amusez-vous',
+      'hero.gd': 'Design graphique', 'hero.ad': 'Direction artistique',
+      'hero.ka': 'Animation cinétique', 'hero.ph': 'Photographie',
+      'hero.by': 'By Noah Lesage',
     },
     en: {
       'hello.1': 'A project?', 'hello.2': 'A need?', 'hello.3': "Let's talk.",
@@ -2425,6 +2450,9 @@ document.addEventListener('DOMContentLoaded', () => {
       'poster.type': 'Graphic design', 'poster.discipline': 'Graphic design',
       'pelago.type': 'Graphic design', 'pelago.discipline': 'Visual identity, Photography',
       'fun.btn': 'Playground', 'fun.cta': 'Click here and have fun',
+      'hero.gd': 'Graphic design', 'hero.ad': 'Artistic direction',
+      'hero.ka': 'Kinetic animation', 'hero.ph': 'Photography',
+      'hero.by': 'By Noah Lesage',
     }
   };
 

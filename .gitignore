@@ -6,3 +6,6 @@ _non-utilise/
 
 # Fichiers système macOS
 .DS_Store
+
+# Captures d'écran générées pour revue — pas utilisées par le site
+captures-pages/
