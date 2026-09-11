@@ -36,7 +36,7 @@
 <meta name="twitter:description" content="Graphisme, direction artistique, animation et photographie — Noah Lesage, Bordeaux.">
 <meta name="twitter:image" content="https://noahlesage.com/og-image.jpg">
 
-<link rel="stylesheet" href="style.css?v=20260910b">
+<link rel="stylesheet" href="style.css?v=20260911d">
 
 <!-- Données structurées (Google — entité, knowledge panel) -->
 <script type="application/ld+json">
@@ -537,10 +537,10 @@
          panoramique ne réagit qu'à la molette/au trackpad OU au
          cliquer-glisser fait directement dans la case (voir
          initProjStrip('tapage') dans script.js) — descendre la page ne
-         bouge jamais les images. Ordre DOM volontairement inversé par
-         rapport à l'ordre de lecture voulu (Lilith en premier dans le HTML,
-         hero Tapage-before-soho en dernier) : le panoramique va de gauche à
-         droite, donc le DERNIER élément du DOM est celui vu en premier. -->
+         bouge jamais les images. Ordre DOM = ordre de lecture voulu (Lilith
+         en premier, hero Tapage-before-soho en dernier) : la case s'ouvre
+         sur Lilith, et le geste "avancer" (molette bas/swipe) fait défiler
+         vers la droite pour révéler la suite jusqu'au hero. -->
     <div class="proj-strip">
       <div class="proj-strip-track">
         <div class="proj-strip-item"><img data-lazy-src="./Tapage/Lilith Tapage 13:03.jpg" alt="Tapage"></div>
@@ -1230,6 +1230,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
-<script src="script.js?v=20260910b"></script>
+<script src="script.js?v=20260911d"></script>
 </body>
 </html>

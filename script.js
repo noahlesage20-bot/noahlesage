@@ -656,18 +656,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     measure();
-    targetX  = -panDist; // départ : dernier item du DOM (le hero) visible en premier
+    targetX  = 0; // départ : premier item du DOM (Lilith) visible en premier
     currentX = targetX;
     requestAnimationFrame(render);
 
     if (window.innerWidth > 900) {
-      // Molette / trackpad
+      // Molette / trackpad — signe inversé par rapport à un scroll standard :
+      // le geste "avancer" (molette bas / swipe) doit faire défiler VERS LA
+      // DROITE (targetX diminue, de 0 vers -panDist) puisqu'on part déjà du
+      // premier item (Lilith) au lieu du dernier.
       strip.addEventListener('wheel', e => {
         e.preventDefault();
         // Trackpad (swipe horizontal) ou molette classique (verticale) :
         // on prend l'axe qui porte le plus de signal.
         const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-        targetX = Math.max(-panDist, Math.min(0, targetX + delta));
+        targetX = Math.max(-panDist, Math.min(0, targetX - delta));
       }, { passive: false });
 
       // Cliquer-glisser
@@ -704,22 +707,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     // Tant que la page n'a jamais été visitée, ces médias n'ont encore
     // aucun src (voir data-lazy-src / hydrateLazyMedia) : le bloc
-    // ci-dessus se déclenche donc tout de suite avec des dimensions
-    // vides (img.complete est vrai sans src), et le calage initial sur le
-    // hero (targetX = -panDist juste en dessous) part alors d'un panDist
-    // quasi nul. Une fois l'hydratation réelle terminée (premier passage
-    // sur la page), on remesure ET on recale sur le hero pour de vrai —
-    // une seule fois, pour ne pas faire sauter la position si l'utilisateur
-    // est déjà en train de glisser la case à ce moment-là.
-    let hydratedOnce = false;
-    pageEl.addEventListener('lazymedia:ready', () => {
-      measure();
-      if (!hydratedOnce) {
-        hydratedOnce = true;
-        targetX  = -panDist;
-        currentX = targetX;
-      }
-    });
+    // ci-dessus se déclenche donc tout de suite avec des dimensions vides
+    // (img.complete est vrai sans src). Remesurer une fois l'hydratation
+    // réelle terminée suffit ici (pas besoin de recaler targetX : l'ancrage
+    // de départ est 0, valide quel que soit panDist — measure() le
+    // re-clampe de toute façon dans les bornes à jour).
+    pageEl.addEventListener('lazymedia:ready', measure);
 
     // Clic sur un visuel → lightbox plein écran (images ET vidéos, voir
     // stripLbOpen) — sauf si ce "clic" est en fait la fin d'un glisser
@@ -1239,20 +1232,31 @@ document.addEventListener('DOMContentLoaded', () => {
     imgB.style.cssText = absCSS;
     if (wrap) wrap.appendChild(imgB);
 
-    // vid = élément vidéo
-    const vid = document.createElement('video');
-    vid.className = 'gallery-img';
-    vid.muted = true; vid.loop = true; vid.setAttribute('playsinline', '');
-    vid.style.cssText = absCSS;
-    if (wrap) wrap.appendChild(vid);
+    // vidA/vidB = double buffer vidéo (même principe que imgA/imgB) — une
+    // seule vidéo partagée ne peut pas crossfader vers une autre vidéo :
+    // changer son src en plein milieu de la transition coupe/recharge
+    // l'élément actuellement visible (flash) et l'ancien "if (curEl !== vid)"
+    // annulait même le fondu. Avec deux buffers, la sortante continue de
+    // jouer pendant que l'entrante charge, exactement comme pour les images.
+    function makeVid() {
+      const v = document.createElement('video');
+      v.className = 'gallery-img';
+      v.muted = true; v.loop = true; v.setAttribute('playsinline', '');
+      v.style.cssText = absCSS;
+      if (wrap) wrap.appendChild(v);
+      return v;
+    }
+    const vidA = makeVid();
+    const vidB = makeVid();
 
     let activeImg  = 'A'; // quel buffer img est visible : 'A' | 'B'
+    let activeVid  = 'A'; // quel buffer vidéo est visible : 'A' | 'B'
     let showingVid = false;
     let pendingXF  = null;
 
     function xfade(curEl, nxtEl, dy, onDone) {
       clearTimeout(pendingXF);
-      [imgA, imgB, vid].forEach(el => {
+      [imgA, imgB, vidA, vidB].forEach(el => {
         if (el !== curEl && el !== nxtEl) {
           el.style.display = 'none'; el.classList.remove('is-fading');
           el.style.zIndex = ''; el.style.opacity = ''; el.style.transform = '';
@@ -1296,16 +1300,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const curImg = activeImg === 'A' ? imgA : imgB;
       const nxtImg = activeImg === 'A' ? imgB : imgA;
+      const curVid = activeVid === 'A' ? vidA : vidB;
+      const nxtVid = activeVid === 'A' ? vidB : vidA;
+      const curEl  = showingVid ? curVid : curImg;
 
       if (isVideo) {
-        vid.src = newSrc; vid.load(); vid.play().catch(() => {});
-        const curEl = showingVid ? vid : curImg;
-        if (curEl !== vid) xfade(curEl, vid, dy, () => { showingVid = true; });
+        nxtVid.src = newSrc; nxtVid.load(); nxtVid.play().catch(() => {});
+        xfade(curEl, nxtVid, dy, () => {
+          if (showingVid && curVid !== nxtVid) { curVid.pause(); curVid.src = ''; }
+          showingVid = true;
+          activeVid  = activeVid === 'A' ? 'B' : 'A';
+        });
       } else {
         nxtImg.src = newSrc;
-        const curEl = showingVid ? vid : curImg;
         xfade(curEl, nxtImg, dy, () => {
-          if (showingVid) { vid.pause(); vid.src = ''; showingVid = false; }
+          if (showingVid) { curVid.pause(); curVid.src = ''; showingVid = false; }
           activeImg = activeImg === 'A' ? 'B' : 'A';
         });
       }
