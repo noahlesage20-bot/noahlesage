@@ -2415,7 +2415,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'form.email.ph': 'votre@email.com',
       'form.msg.ph': 'Parlez-moi de votre projet…',
       'form.send': 'Envoyer →', 'form.retry': 'Réessayer →', 'form.confirm': 'Message envoyé — à bientôt.',
-      'hello.bio': 'Basé à Bordeaux, je développe des identités visuelles et des campagnes graphiques pour des lieux culturels et des marques, du Palais Bulles à Tapage. Ma direction artistique part de l\'image, nourrie par une pratique photographique quotidienne, et se prolonge en print, en animation et en récit.',
+      'hello.bio': 'Le studio réunit direction artistique, identité visuelle, motion design et photographie autour d\'une même écriture visuelle, minimaliste, éditoriale, marquée par l\'analogique. J\'aborde chaque médium avec la même exigence de forme, que ce soit une charte graphique, un habillage animé ou une série photo.',
       'hello.social': 'Réseaux', 'hello.freelance': 'Freelance indépendant',
       'photo.voyage': 'Voyage', 'photo.event': 'Évènement',
       'stoxl.tagline': 'Direction artistique — Graphisme',
