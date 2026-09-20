@@ -1313,6 +1313,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       } else {
         nxtImg.src = newSrc;
+        nxtImg.alt = (item.textContent || '').trim() + ' — Ringer Studio, Noah Lesage graphiste freelance à Bordeaux';
         xfade(curEl, nxtImg, dy, () => {
           if (showingVid) { curVid.pause(); curVid.src = ''; showingVid = false; }
           activeImg = activeImg === 'A' ? 'B' : 'A';
