@@ -129,10 +129,10 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ── Loader = Orbit ───────────────────────────────────────────────────────
-  // Ordre aligné sur la roulette Work : Matière Créative, From S to XL,
-  // Tapage, Palais Bulles, Pelago, Cal Smith, Poster et animation.
-  const O_SRCS  = ['mc-poster.jpg', 'From S to XL anim.mp4', './Tapage/Publi TAPAGE 19:12.mp4', 'Palais bulles.jpg', 'Pelago/Affiche_teasing3.jpg', 'Cal Smith.jpg', 'Poster et animation/a2.jpg'];
-  const O_TILTS = [-8, 12, -4, 9, -13, 6, -10];
+  // Ordre aligné sur la roulette Work : Matière Créative, Lesage Atelier,
+  // From S to XL, Tapage, Palais Bulles, Pelago, Cal Smith, Poster et animation.
+  const O_SRCS  = ['mc-poster.jpg', 'Lesage Atelier/abribus-mockup.jpg', 'From S to XL anim.mp4', './Tapage/Publi TAPAGE 19:12.mp4', 'Palais bulles.jpg', 'Pelago/Affiche_teasing3.jpg', 'Cal Smith.jpg', 'Poster et animation/a2.jpg'];
+  const O_TILTS = [-8, 7, 12, -4, 9, -13, 6, -10];
   O_SRCS.forEach(src => { const i = new Image(); i.src = src; });
 
   let O_VW = window.innerWidth, O_VH = window.innerHeight;
@@ -395,7 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  const projPages     = new Set(['matiere','stoxl','tapage','palais','calsmith','poster','pelago']);
+  const projPages     = new Set(['matiere','stoxl','tapage','palais','calsmith','poster','pelago','lesage']);
   const photoSubPages = new Set(['photo-event','photo-street','photo-voyage']);
   const siteHeader    = document.getElementById('header');
   const pageTitles = {
@@ -404,13 +404,14 @@ document.addEventListener('DOMContentLoaded', () => {
     stoxl: 'From S to XL — Ringer Studio.', tapage: 'Tapage — Ringer Studio.',
     palais: 'Palais Bulles — Ringer Studio.', calsmith: 'Cal Smith — Ringer Studio.',
     poster: 'Poster — Ringer Studio.', pelago: 'Pelago — Ringer Studio.',
+    lesage: 'Lesage Atelier — Ringer Studio.',
     'photo-event': 'Évènement — Ringer Studio.',
     'photo-street': 'Street — Ringer Studio.',
     'photo-voyage': 'Voyage — Ringer Studio.',
   };
 
   function updateNavActive(target) {
-    const workPages  = ['work','matiere','stoxl','tapage','palais','calsmith','poster','pelago'];
+    const workPages  = ['work','matiere','stoxl','tapage','palais','calsmith','poster','pelago','lesage'];
     const photoPages = ['photo','photo-event','photo-street','photo-voyage'];
     const mainTarget = workPages.includes(target) ? 'work'
                      : photoPages.includes(target) ? 'photo'
@@ -739,11 +740,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   initProjStrip('tapage');
 
-  // ── Cal Smith — feed Instagram fictif ─────────────────────────────────
+  // ── Feed Instagram fictif (Cal Smith, Lesage Atelier) ─────────────────
   // Clic sur une vignette de la grille → lightbox plein écran partagée
   // (stripLbOpen, même composant que les bandes scroll horizontales).
-  function initCalSmithFeed() {
-    const cells = [...document.querySelectorAll('#page-calsmith .cs-ig-cell')];
+  function initFakeInstagramFeed(pageId) {
+    const cells = [...document.querySelectorAll('#page-' + pageId + ' .cs-ig-cell')];
     if (!cells.length) return;
     const lbList = cells.map(cell => {
       const img = cell.querySelector('img');
@@ -755,7 +756,8 @@ document.addEventListener('DOMContentLoaded', () => {
       cell.addEventListener('click', () => stripLbOpen(lbList, i));
     });
   }
-  initCalSmithFeed();
+  initFakeInstagramFeed('calsmith');
+  initFakeInstagramFeed('lesage');
 
   // ── Vidéos longues (son) — badge "voir en plein écran" au survol ─────────
   // Poster et animation + Cal Smith : ouvre la même lightbox partagée que les
@@ -900,6 +902,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // affichée, ni laisser de listener orphelin à nettoyer.
   const PROJECTS = [
     { page: 'matiere',  img: 'mc-poster.jpg',       title: 'Matière Créative' },
+    { page: 'lesage',   img: 'Lesage Atelier/abribus-mockup.jpg', title: 'Lesage Atelier' },
     { page: 'stoxl',    img: 'From S to XL.jpg',    title: 'From S to XL' },
     { page: 'tapage',   img: 'Tapage/Tapage valentines day.jpg', title: 'Tapage' },
     { page: 'palais',   img: 'Palais bulles.jpg',   title: 'Palais Bulles' },
@@ -2419,6 +2422,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'form.meet': 'Prendre rendez-vous →',
       'hello.bio': 'Le studio réunit direction artistique, identité visuelle, motion design et photographie autour d\'une même écriture visuelle, minimaliste, éditoriale, marquée par l\'analogique. J\'aborde chaque médium avec la même exigence de forme, que ce soit une charte graphique, un habillage animé ou une série photo.',
       'hello.social': 'Réseaux', 'hello.freelance': 'Freelance indépendant',
+      'hello.awards': 'Récompenses', 'hello.award.awwwards': 'Mention honorable — Awwwards',
       'photo.voyage': 'Voyage', 'photo.event': 'Évènement',
       'stoxl.tagline': 'Direction artistique — Graphisme',
       'tapage.tagline': 'Graphisme — Affiche',
@@ -2433,6 +2437,8 @@ document.addEventListener('DOMContentLoaded', () => {
       'calsmith.type': 'Graphisme', 'calsmith.discipline': 'Identité visuelle, Réseaux sociaux',
       'poster.type': 'Graphisme', 'poster.discipline': 'Graphisme',
       'pelago.type': 'Graphisme', 'pelago.discipline': 'Identité visuelle, Photographie',
+      'lesage.tagline': 'Direction artistique — Identité visuelle',
+      'lesage.type': 'Direction artistique', 'lesage.discipline': 'Identité visuelle, Packaging, Site web',
       'fun.btn': 'Amusement', 'fun.cta': 'Cliquez ici et amusez-vous',
       'hero.gd': 'Design graphique', 'hero.ad': 'Direction artistique',
       'hero.ka': 'Animation cinétique', 'hero.ph': 'Photographie',
@@ -2447,6 +2453,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'form.meet': 'Book a meeting →',
       'hello.bio': 'Based in Bordeaux, I develop visual identities and graphic campaigns for cultural venues and brands, from Palais Bulles to Tapage. My art direction starts from the image, fed by a daily photographic practice, and extends into print, animation and narrative.',
       'hello.social': 'Social', 'hello.freelance': 'Independent freelance',
+      'hello.awards': 'Awards', 'hello.award.awwwards': 'Honorable Mention — Awwwards',
       'photo.voyage': 'Travel', 'photo.event': 'Event',
       'stoxl.tagline': 'Art direction — Graphic design',
       'tapage.tagline': 'Graphic design — Poster',
@@ -2461,6 +2468,8 @@ document.addEventListener('DOMContentLoaded', () => {
       'calsmith.type': 'Graphic design', 'calsmith.discipline': 'Visual identity, Social media',
       'poster.type': 'Graphic design', 'poster.discipline': 'Graphic design',
       'pelago.type': 'Graphic design', 'pelago.discipline': 'Visual identity, Photography',
+      'lesage.tagline': 'Art direction — Visual identity',
+      'lesage.type': 'Art direction', 'lesage.discipline': 'Visual identity, Packaging, Website',
       'fun.btn': 'Playground', 'fun.cta': 'Click here and have fun',
       'hero.gd': 'Graphic design', 'hero.ad': 'Artistic direction',
       'hero.ka': 'Kinetic animation', 'hero.ph': 'Photography',

@@ -1959,6 +1959,8 @@ div.mc-v.is-shown   { display: block; }
 .cs-swatch--blue   .cs-swatch-dot { background: #b4cefb; }
 .cs-swatch--yellow .cs-swatch-dot { background: #f7ff9d; }
 .cs-swatch--yellow-bold .cs-swatch-dot { background: #efe533; }
+.cs-swatch--lsgred  .cs-swatch-dot { background: #f90f3a; border-color: transparent; }
+.cs-swatch--maroon  .cs-swatch-dot { background: #49000e; border-color: transparent; }
 
 .cs-swatch-name {
   font-size: 10px;
@@ -2655,6 +2657,13 @@ div.mc-v.is-shown   { display: block; }
     width: min(94vw, 500px);
   }
   .voyage-gallery-close { top: 16px; right: 20px; }
+
+  /* Badge Awwwards — fixe et centré verticalement, il finit tôt ou tard
+     par recouvrir du texte de page en défilant sur un écran étroit (le
+     texte, lui, défile avec la page ; le badge reste fixe au milieu).
+     Masqué sur mobile : son rôle de reconnaissance vise surtout les
+     visiteurs desktop. */
+  #awwwards { display: none; }
 }
 
 /* ── Très petits écrans ≤ 390px ──────────────── */
